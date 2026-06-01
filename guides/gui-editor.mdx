@@ -1,0 +1,161 @@
+---
+title: "Using the py2htmlGUI Visual Editor"
+sidebarTitle: "GUI Editor"
+description: "py2html includes an optional Tkinter-based visual editor that lets you build pages with a drag-and-drop element tree, live HTML preview, and JSON project save/load."
+---
+
+py2html ships with an optional visual editor — `py2htmlGUI.py` — that lets you construct pages without writing Python code. The editor displays your page as a live element hierarchy, opens property dialogs for each element type, and renders a real-time HTML preview. Projects can be saved to a JSON file and reopened in a later session, or exported directly to an `.html` file.
+
+## Requirements
+
+The GUI editor depends on several packages beyond py2html's core `beautifulsoup4` dependency. All of them must be importable before launching the editor.
+
+| Package | Purpose |
+|---|---|
+| `tkinter` | Standard-library GUI framework (ships with most Python distributions) |
+| `tkinterweb` | Embeds an HTML rendering engine inside a Tkinter window for the inline preview panel |
+| `webview` | Opens a full-featured browser window for the `Show Preview` command |
+| `sv_ttk` | Applies the Sun Valley (Windows 11-style) theme to all Tkinter widgets |
+
+<Note>
+  `tkinter` is included with the official Python installers for Windows and
+  macOS. On Linux you may need to install it separately via your package
+  manager (e.g., `sudo apt install python3-tk` on Debian/Ubuntu). The other
+  three packages — `tkinterweb`, `webview`, and `sv_ttk` — are third-party
+  and must be installed manually.
+</Note>
+
+## Installation
+
+The GUI editor is installed optionally alongside the main library. When you run `py2html_installer.py`, the installer window presents a **"Install Py2Html GUI"** checkbox. Checking it before clicking **Install** copies `py2htmlGUI.py` into the same directory as `py2html/__init__.py`.
+
+<Steps>
+  <Step title="Run the installer">
+    Launch the installer script with Python:
+
+    ```bash
+    python py2html_installer.py
+    ```
+  </Step>
+  <Step title="Check the GUI option">
+    In the installer window, check **"Install Py2Html GUI"** before proceeding.
+  </Step>
+  <Step title="Click Install">
+    Click the **Install** button. The installer downloads `beautifulsoup4` via pip and writes both `py2html/__init__.py` and `py2html/py2htmlGUI.py` to your home directory.
+  </Step>
+  <Step title="Launch the editor">
+    Once installation completes, start the editor:
+
+    ```bash
+    python ~/py2html/py2htmlGUI.py
+    ```
+  </Step>
+</Steps>
+
+## Interface overview
+
+The editor opens an 800 × 700 window divided into several regions.
+
+```
+┌─────────────────────────────────────────────┐
+│  File │ Insert │ HTML          (menu bar)    │
+├──────────────────┬──────────────────────────┤
+│ [Insert Frame]   │                           │
+│ [Custom Tag   ]  │   Element Hierarchy       │
+│ [Custom Scripts] │   (Treeview)              │
+│                  │                           │
+│                  │   ▶ Frame (Div): flex     │
+│                  │     ▶ H1: "Welcome"       │
+│                  │     ▶ P: "Intro text..."  │
+│                  │   ▶ Script: inline (42 c) │
+│                  │                           │
+├──────────────────┴──────────────────────────┤
+│ Inserting into: 'Frame (Div): flex'  (status)│
+└─────────────────────────────────────────────┘
+```
+
+**Left panel — Toolbar buttons:** Three quick-access buttons sit above the treeview: `Insert Frame (Div)`, `Custom Tag`, and `Custom Scripts`. They open the same property dialogs as their counterparts in the Insert menu.
+
+**Centre panel — Element Hierarchy (Treeview):** Every element you add appears here as a labelled node. Frame (Div) nodes are expandable; their children appear indented beneath them. Clicking any node in the tree updates the insertion target.
+
+**Bottom — Status bar:** Displays the currently active insertion target. New elements are always added as children of the target shown here.
+
+**Menu bar:** Contains three menus — `File`, `Insert`, and `HTML`.
+
+## Selecting an insertion target
+
+When you click a node in the element hierarchy, the status bar updates to show where new elements will be inserted.
+
+- Clicking a **Frame (Div)** node makes it the active container. All subsequent inserts become children of that frame.
+- Clicking any **non-container** node (button, label, image, etc.) selects its parent as the insertion target instead.
+- Clicking on empty space in the treeview, or deselecting all nodes, resets the target to the root document.
+
+<Tip>
+  To build a nested layout, first insert a Frame, then click on it in the tree
+  before adding inner elements. The status bar confirms which container will
+  receive new children.
+</Tip>
+
+## Adding elements via the Insert menu
+
+Open the **Insert** menu to see all available element types. Each option opens a small property dialog where you can set colours, text content, padding, and element-specific options before clicking the Insert button to commit the element to the tree.
+
+| Menu item | Underlying py2html method | Dialog fields |
+|---|---|---|
+| Button | `Button()` | Text, text colour, background, border, border radius, padding |
+| Label (Paragraph) | `Label()` | Text, text colour, background, border, border radius, padding |
+| Heading | `Heading()` | Level (1–6), text, text colour, background, border, border radius, padding |
+| Image | `Image()` | Source URL/path, alt text, width, height, border, border radius |
+| Link | `Link()` | Href URL, link text, text colour, background, border, border radius, padding, text decoration |
+| Textarea | `Text()` | Text, text colour, background, border, border radius, padding |
+| Frame (Div) | `Frame()` | General tab (colours, size, padding, margin) + Layout tab (position, offset, display mode, flex settings) |
+| Custom Tag | `CustomTag()` | Tag name, content text, colours, padding |
+| Script | `Script()` | Source URL (optional) or inline JavaScript code (optional) |
+
+The **Frame (Div)** dialog is the most detailed. It contains two tabs:
+
+- **General:** background colour, text colour, border, border-radius, an optional initial content label, padding, width, height, and margin.
+- **Layout:** position type (`static`, `relative`, `absolute`, `fixed`, `sticky`), top/left/right/bottom offset fields, display type (`block`, `inline`, `inline-block`, `flex`, `none`), and all five flexbox settings (`align-items`, `justify-content`, `flex-direction`, `flex-wrap`, `gap`).
+
+## File menu operations
+
+| Command | Description |
+|---|---|
+| **New Project** | Resets the element tree and opens a fresh, empty canvas. |
+| **Open Project (JSON)** | Opens a file picker, loads a previously saved `.json` project, and rebuilds the element tree from the serialised data. |
+| **Save Project (JSON)** | Opens a save dialog and writes the current element tree to a `.json` file. The JSON preserves the full element hierarchy and all style properties. |
+| **Export HTML** | Opens a save dialog and writes the rendered, prettified HTML to an `.html` file using `getHTML(format=True)`. |
+
+## HTML menu and preview
+
+The **HTML** menu provides two preview commands.
+
+| Command | Keyboard shortcut | Description |
+|---|---|---|
+| **Show Preview** | `Ctrl+Enter` | Renders the current page and opens it in a native `webview` browser window. |
+| **Get HTML** | `Ctrl+P` | Opens a split window showing the raw HTML source on the left and a live `tkinterweb` inline preview on the right. The preview refreshes automatically every two seconds. |
+
+## JSON project format
+
+When you save a project, py2html serialises the entire `html.tags` list to JSON. Frame containers (div elements) store their children as a nested JSON array under the `content` key. All style parameters — colours, padding, margin, position, flex config — are preserved as dictionary keys alongside the tag type.
+
+When you open a project, the editor reads the JSON and recursively reconstructs `py2html.Parent` objects so the element tree is live and editable again.
+
+<Note>
+  JSON project files are editor-specific. They include internal GUI state
+  (like py2html tag dictionaries) and are not the same as the exported `.html`
+  files. To share your work as a web page, use **Export HTML**, not
+  **Save Project**.
+</Note>
+
+## Limitations
+
+<Warning>
+  The GUI editor requires a working Tkinter installation. Headless servers and
+  some minimal Linux containers do not have a display server, and Tkinter will
+  refuse to open a window in those environments.
+</Warning>
+
+- **Platform support:** Windows, macOS, and Linux desktop environments with Tk are supported. Headless or SSH-only environments are not.
+- **Windows DPI scaling:** The installer and GUI both call `SetProcessDpiAwareness(1)` on Windows to prevent blurry rendering on high-DPI displays. This is automatic and requires no user configuration.
+- **Delete precision:** The current delete implementation matches elements by their display text in the tree. If two sibling elements have identical display text, only the first match is deleted. Re-saving and re-loading the project after a deletion resolves any tree/data mismatches.

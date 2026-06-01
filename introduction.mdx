@@ -1,0 +1,73 @@
+---
+title: "py2html: Build HTML with a Python Widget API"
+sidebarTitle: "Introduction"
+description: "py2html is a Python library that lets you build complete HTML pages programmatically using a method-based API inspired by Tkinter — no templates needed."
+---
+
+py2html lets you construct full HTML documents entirely in Python. Instead of writing raw markup or learning a template language, you create a `Parent` object, call methods on it to add elements, and render the result by calling `getHTML()`. The mental model maps closely to Tkinter: widgets are placed on a root window, and the window renders itself — except here the output is a valid HTML file instead of a GUI.
+
+## Core concept
+
+Every py2html page starts with a single `Parent` instance. All HTML elements — headings, paragraphs, buttons, images, links, and containers — are added by calling methods directly on that object. When you are ready to render, `getHTML()` walks the internal tag list and produces a complete `<html>…</html>` document.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Hello, py2html!")
+page.Label(text="Build HTML without writing a single angle bracket.")
+page.Button(text="Get Started")
+
+print(page.getHTML(format=True))
+```
+
+No Jinja2 filters, no f-string soup, no `BeautifulSoup` soup-ing of your own output. The entire document lives in Python.
+
+## Key capabilities
+
+<CardGroup cols={2}>
+  <Card title="Rich element library" icon="puzzle-piece">
+    Add `Button`, `Label`, `Heading`, `Image`, `Link`, `Frame`, `Script`, `TextNode`, and `CustomTag` elements using straightforward method calls. Every element exposes foreground colour, background colour, border, border radius, and padding parameters.
+  </Card>
+  <Card title="Inline text markup" icon="text-size">
+    Apply font-size spans, bold, italic, inline code, code blocks, and centred text directly inside any text string using a lightweight bracket syntax — for example `[* bold *]` or `[xl large xl]`.
+  </Card>
+  <Card title="Flexbox layouts via Frame" icon="table-columns">
+    The `Frame` element renders as a `<div>` and accepts a `content_manager` parameter (`"block"`, `"flex"`, etc.) plus a `flex_config` dictionary that maps directly to CSS `align-items`, `justify-content`, `flex-direction`, `flex-wrap`, and `gap`.
+  </Card>
+  <Card title="Auto-escaping" icon="shield-check">
+    All text content passed to element methods is automatically escaped — `&`, `<`, `>`, `"`, and `'` are converted to their HTML entity equivalents before being written into the document.
+  </Card>
+  <Card title="Pretty-print output" icon="code">
+    Passing `format=True` to `getHTML()` runs the output through `BeautifulSoup.prettify()`, producing neatly indented HTML that is easy to read and diff.
+  </Card>
+  <Card title="Nested containers" icon="layer-group">
+    A `Frame` can receive another `Parent` instance as its `content` argument, enabling arbitrarily deep nesting. The inner `Parent` is rendered recursively when `getHTML()` is called on the root.
+  </Card>
+  <Card title="JavaScript integration" icon="js">
+    `Script(code="…")` embeds inline JavaScript; `Script(src="…")` adds an external script reference. Script content is intentionally **not** HTML-escaped so that JS operators and string literals pass through unchanged.
+  </Card>
+  <Card title="Optional GUI editor" icon="window">
+    An optional Tkinter-based visual editor (`py2htmlGUI.py`) lets you build pages interactively with a live HTML preview. It is installed separately via the `py2html_installer.py` script.
+  </Card>
+</CardGroup>
+
+## Inline text markup reference
+
+Inside any text value you can use the following bracket pairs:
+
+| Syntax | Result |
+|---|---|
+| `[* bold *]` | **Bold** (`<strong>`) |
+| `[_ italic _]` | *Italic* (`<em>`) |
+| `` [` code `] `` | Inline code (`<code>`) |
+| `[``` block ```]` | Code block (`<pre><code>`) |
+| `[c centred c]` | Centred text (`<center>`) |
+| `[xl large xl]` | 1.5 rem span |
+| `[s small s]` | 0.8 rem span |
+
+Size variants available: `xxs`, `xs`, `s`, `m`, `l`, `xl`, `xxl`, `xxxl`.
+
+## Optional GUI editor
+
+When you install py2html with the **Install Py2Html GUI** option selected, the installer also writes `py2htmlGUI.py` to the same directory. Launching that file opens a Tkinter window with a hierarchical element tree on the left, property dialogs for every element type, a live HTML preview pane, and export to `.html` or `.json` project files. The GUI requires `tkinterweb`, `webview`, and `sv_ttk` in addition to the core dependencies.

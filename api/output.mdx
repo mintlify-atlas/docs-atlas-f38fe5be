@@ -1,0 +1,213 @@
+---
+title: "Output Methods — py2html API Reference"
+sidebarTitle: "Output"
+description: "Reference for py2html's HTML rendering and file output methods: getHTML(), saveToFile(), save(), and escapeCharacters()."
+---
+
+Once you have assembled a `Parent` document with the desired elements, py2html offers several output methods to render the document to a string, write it to a file on disk, or pipe it to any writable stream. All rendering passes through the same internal `getHTML()` method, which walks `self.tags` in order and builds the final HTML string.
+
+---
+
+## getHTML()
+
+```python
+page.getHTML(format=False, insideframe=False)
+```
+
+Renders the entire document to an HTML string. This is the core rendering method used internally by `__str__`, `save()`, and `saveToFile()`.
+
+<ParamField body="format" type="bool" default="False">
+  When `True`, the raw HTML is passed through BeautifulSoup's `prettify()`
+  method, producing an indented, human-readable output. When `False` (default),
+  the HTML is returned as a compact single-line string.
+</ParamField>
+
+<ParamField body="insideframe" type="bool" default="False">
+  When `False` (default), the output is wrapped in a complete
+  `<html><head><title>…</title></head><body>…</body></html>` skeleton.
+  When `True`, only the inner element HTML is returned — useful when embedding
+  the output inside another document or a `Frame`.
+</ParamField>
+
+**Returns:** `str` — the rendered HTML.
+
+<Note>
+  `format=True` depends on the `beautifulsoup4` package. This is listed as a
+  dependency of py2html (`import bs4` at the top of the module), so it should
+  already be present in your environment. If `prettify()` raises an exception
+  for any reason, the unformatted HTML is returned instead.
+</Note>
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Hello, World!")
+page.Button(text="Get Started", fg="#fff", bg="#00a651")
+
+# Compact output — ideal for production or sending over the wire
+compact = page.getHTML()
+print(compact)
+# <html><head><title>Py2HTML Site</title></head><body style='padding: 0; margin: 0;'><h1 ...>Hello, World!</h1><button ...>Get Started</button></body></html>
+
+# Formatted output — easier to read and debug
+pretty = page.getHTML(format=True)
+print(pretty)
+
+# Inner HTML only — no <html>/<body> wrapper
+fragment = page.getHTML(insideframe=True)
+print(fragment)
+# <h1 ...>Hello, World!</h1><button ...>Get Started</button>
+```
+
+<Tip>
+  Use `insideframe=True` when you need an HTML snippet to insert into another
+  template engine or to compare elements in tests.
+</Tip>
+
+---
+
+## saveToFile()
+
+```python
+page.saveToFile(filename)
+```
+
+Writes the rendered HTML to a file on disk. The file is opened in write mode (`"w"`), truncating any existing content. Output is **not** pretty-printed — it is the compact form returned by `getHTML()` with no arguments.
+
+<ParamField body="filename" type="str" required>
+  Path to the output file, e.g., `"index.html"` or `"/var/www/html/page.html"`.
+  The file is created if it does not exist; existing files are overwritten.
+</ParamField>
+
+**Returns:** `None`
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.config(title="My Site")
+page.Heading(level=1, text="Welcome")
+page.Label(text="Built with py2html.")
+
+page.saveToFile("index.html")
+# Writes compact HTML to index.html
+```
+
+<Note>
+  `saveToFile()` uses Python's built-in `open()` in text mode. Ensure the
+  target directory exists and your process has write permission before calling
+  this method.
+</Note>
+
+---
+
+## save()
+
+```python
+page.save(destination)
+```
+
+Writes the formatted (prettified) HTML to any writable file-like object. Unlike `saveToFile()`, the output **is** pretty-printed via `getHTML(format=True)`.
+
+<ParamField body="destination" type="file-like object" required>
+  Any object that implements a `.write(str)` method. Typical uses include an
+  `open()` file handle, `sys.stdout`, or `io.StringIO`.
+</ParamField>
+
+**Returns:** `None`
+
+```python
+import py2html
+import sys
+import io
+
+page = py2html.Parent()
+page.Heading(level=1, text="py2html Output")
+page.Button(text="Click me")
+
+# Write to a file with formatting
+with open("output.html", "w") as f:
+    page.save(f)
+
+# Print formatted HTML to the terminal
+page.save(sys.stdout)
+
+# Capture into a string buffer for further processing
+buffer = io.StringIO()
+page.save(buffer)
+html_string = buffer.getvalue()
+print(len(html_string), "characters written")
+```
+
+<Tip>
+  Prefer `save()` over `saveToFile()` when you need formatted output, want to
+  use a custom file handle, or need to pipe the document to another stream such
+  as an HTTP response body.
+</Tip>
+
+---
+
+## escapeCharacters()
+
+```python
+page.escapeCharacters(text)
+```
+
+Converts arbitrary text into an HTML-safe string and applies py2html's inline markup syntax. This method is called automatically by every element method that accepts `text` or `content` — you rarely need to invoke it directly.
+
+<ParamField body="text" type="any" required>
+  The input value. Coerced to `str` via `str(text)` before processing, so
+  integers, floats, and other stringifiable types are accepted.
+</ParamField>
+
+**Returns:** `str` — the escaped, markup-processed string ready for insertion into HTML.
+
+The following transformations are applied in order:
+
+| Input token | HTML output | Notes |
+|---|---|---|
+| `&` | `&amp;` | Must be first to avoid double-escaping |
+| `<` | `&lt;` | |
+| `>` | `&gt;` | |
+| `"` | `&quot;` | |
+| `'` | `&#39;` | |
+| `\n` | `<br>` | Newline to line break |
+| `\t` | `&nbsp;&nbsp;&nbsp;&nbsp;` | Tab to four non-breaking spaces |
+| `[c … c]` | `<center> … </center>` | Center alignment |
+| `[* … *]` | `<strong> … </strong>` | Bold |
+| `[_ … _]` | `<em> … </em>` | Italic |
+| `` [` … `] `` | `<code> … </code>` | Inline code |
+| `` [``` … ```] `` | `<pre><code> … </code></pre>` | Code block |
+| `[xs … xs]` | `<span style='font-size: 0.6rem;'>` | Extra-small text |
+| `[xxs … xxs]` | `<span style='font-size: 0.4rem;'>` | Extra-extra-small text |
+| `[s … s]` | `<span style='font-size: 0.8rem;'>` | Small text |
+| `[m … m]` | `<span style='font-size: 1rem;'>` | Medium (base) text |
+| `[l … l]` | `<span style='font-size: 1.2rem;'>` | Large text |
+| `[xl … xl]` | `<span style='font-size: 1.5rem;'>` | Extra-large text |
+| `[xxl … xxl]` | `<span style='font-size: 2rem;'>` | Extra-extra-large text |
+| `[xxxl … xxxl]` | `<span style='font-size: 3rem;'>` | Triple extra-large text |
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+# Manually call escapeCharacters
+raw = 'Price: $5 < $10 & "tax" applies\nSee [* terms *].'
+safe = page.escapeCharacters(raw)
+print(safe)
+# Price: $5 &lt; $10 &amp; &quot;tax&quot; applies<br>See <strong> terms </strong>.
+
+# Inline markup inside element text — escapeCharacters is called automatically
+page.Label(text="[* Important: *] read [_ all _] the docs.")
+print(page.getHTML(insideframe=True))
+# <p style='...'>  <strong>Important:</strong> read <em>all</em> the docs.</p>
+```
+
+<Warning>
+  `escapeCharacters()` escapes HTML special characters **before** processing
+  inline tokens. This means markup tokens like `[*`, `*]`, `[_`, and `_]` must
+  appear in the original string — they cannot themselves contain `<`, `>`, or
+  `&` characters that would be escaped first.
+</Warning>

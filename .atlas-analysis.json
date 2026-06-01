@@ -1,0 +1,88 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "py2html",
+  "projectDescription": "A Python library for building HTML documents programmatically using a Tkinter-inspired widget API, with an optional GUI editor.",
+  "theme": "luma",
+  "primaryColor": "#00a651",
+  "lightColor": "#deffee",
+  "darkColor": "#004d25",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/parent-object",
+              "concepts/text-markup",
+              "concepts/styling"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/nesting-frames",
+              "guides/javascript-integration",
+              "guides/saving-output",
+              "guides/gui-editor"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Parent Class",
+            "pages": [
+              "api/parent-class",
+              "api/elements",
+              "api/output"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Build full HTML pages in pure Python using a simple widget-based API",
+    "Rich set of built-in elements: Button, Label, Heading, Image, Link, Frame, Script, TextNode, CustomTag",
+    "Inline text markup syntax for bold, italic, code, font-size spans, and centering",
+    "Flexbox-powered Frame layout with full CSS positioning support",
+    "Automatic HTML character escaping for security",
+    "Pretty-print HTML output via BeautifulSoup integration",
+    "Save HTML to file or stream with getHTML() / saveToFile()",
+    "Optional Tkinter GUI editor (py2htmlGUI) with visual element tree and live preview"
+  ],
+  "publicApiSurface": [
+    "Parent()",
+    "Parent.Button(fg, bg, bd, bdradius, text, padx, pady)",
+    "Parent.Label(fg, bg, bd, bdradius, text, padx, pady)",
+    "Parent.Text(fg, bg, bd, bdradius, text, padx, pady)",
+    "Parent.Heading(level, text, fg, bg, bd, bdradius, padx, pady)",
+    "Parent.Image(src, alt, width, height, bd, bdradius)",
+    "Parent.Link(href, text, fg, bg, bd, bdradius, padx, pady, text_decor)",
+    "Parent.Frame(fg, bg, bd, bdradius, content, padx, pady, width, height, marginx, marginy, content_manager, flex_config, position, offset)",
+    "Parent.Script(code, src, **kwargs)",
+    "Parent.CustomTag(tag_name, content, fg, bg, bd, bdradius, padx, pady, **kwargs)",
+    "Parent.TextNode(text, escape)",
+    "Parent.getHTML(format, insideframe)",
+    "Parent.saveToFile(filename)",
+    "Parent.save(destination)",
+    "Parent.escapeCharacters(text)",
+    "Parent.config(**kwargs)",
+    "Parent.__call__(*args, escape, sep)",
+    "Parent.__getitem__(index)",
+    "Parent.__delitem__(index)",
+    "Parent.__str__()"
+  ]
+}

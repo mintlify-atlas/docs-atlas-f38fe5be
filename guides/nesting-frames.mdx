@@ -1,0 +1,254 @@
+---
+title: "Nesting Frames to Build Complex Layouts"
+sidebarTitle: "Nesting Frames"
+description: "Use nested Parent objects and Frame() to build multi-level HTML layouts with flexbox rows, columns, and absolute positioning in py2html."
+---
+
+`Frame()` is the primary layout primitive in py2html. Every call to `Frame()` emits a `<div>` element, and by passing a `Parent` object as its `content`, you can nest entire element trees inside it — building multi-column grids, card layouts, and overlay compositions entirely in Python.
+
+## How Frame() works
+
+`Frame()` accepts either a plain string or a `Parent` object as its `content` argument. When you pass a string, it is HTML-escaped and placed directly inside the `<div>`. When you pass a `Parent` object, py2html extracts that object's `tags` list and renders all its children as the div's inner HTML. This is what makes nesting possible.
+
+```python
+Frame(
+    fg="#000",
+    bg="#fff",
+    bd="none",
+    bdradius="50px",
+    content="Py2HTML",   # string or a Parent object
+    padx=15,
+    pady=15,
+    width="auto",
+    height="auto",
+    marginx=0,
+    marginy=0,
+    content_manager="block",
+    flex_config={
+        "align-items": "flex-start",
+        "justify-content": "flex-start",
+        "flex-direction": "row",
+        "flex-wrap": "nowrap",
+        "gap": "0px"
+    },
+    position="static",
+    offset={"top": "0px", "left": "0px", "right": "auto", "bottom": "auto"}
+)
+```
+
+The `content_manager` parameter maps directly to the CSS `display` property of the rendered `<div>`. Setting it to `"flex"` activates the full `flex_config` dict, which injects all five flexbox properties into the element's inline style.
+
+<Note>
+  Every `Parent` object that you intend to nest must be created separately and
+  populated with elements before being passed to `Frame()`. The call to
+  `Frame()` copies the `Parent`'s tag list at insertion time.
+</Note>
+
+## The flex_config dictionary
+
+When `content_manager="flex"`, py2html reads the `flex_config` dict and writes each key as a CSS declaration. All five keys are always emitted, falling back to their defaults if a key is absent.
+
+| Key | CSS property | Default |
+|---|---|---|
+| `align-items` | `align-items` | `"flex-start"` |
+| `justify-content` | `justify-content` | `"flex-start"` |
+| `flex-direction` | `flex-direction` | `"row"` |
+| `flex-wrap` | `flex-wrap` | `"nowrap"` |
+| `gap` | `gap` | `"0px"` |
+
+## Two-column flex layout
+
+The pattern for a side-by-side column layout is: create a `Parent` for each column, populate each one, then wrap them in an outer `Frame` with `content_manager="flex"` and `flex-direction: row`.
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+# --- Left column ---
+left_col = py2html.Parent()
+left_col.Heading(level=2, text="Navigation")
+left_col.Link(href="/home",    text="Home")
+left_col.Link(href="/about",   text="About")
+left_col.Link(href="/contact", text="Contact")
+
+# --- Right column ---
+right_col = py2html.Parent()
+right_col.Heading(level=2, text="Main Content")
+right_col.Label(text="Welcome to the page. This panel fills the remaining width.")
+right_col.Button(text="Get Started")
+
+# --- Outer flex container ---
+left_parent  = py2html.Parent()
+right_parent = py2html.Parent()
+
+left_parent.Frame(
+    content=left_col,
+    bg="#f5f5f5",
+    bd="1px solid #ddd",
+    bdradius="8px",
+    width="240px",
+    padx=20,
+    pady=20,
+)
+
+right_parent.Frame(
+    content=right_col,
+    bg="#ffffff",
+    bd="1px solid #ddd",
+    bdradius="8px",
+    width="100%",
+    padx=24,
+    pady=24,
+)
+
+# Combine both columns into one Parent to pass as the outer frame's content
+row_children = py2html.Parent()
+row_children.Frame(content=left_col,  bg="#f5f5f5", bd="1px solid #ddd",
+                   bdradius="8px", width="240px", padx=20, pady=20)
+row_children.Frame(content=right_col, bg="#ffffff", bd="1px solid #ddd",
+                   bdradius="8px", width="100%",   padx=24, pady=24)
+
+page.Frame(
+    content=row_children,
+    content_manager="flex",
+    flex_config={
+        "flex-direction":  "row",
+        "align-items":     "flex-start",
+        "justify-content": "flex-start",
+        "flex-wrap":       "nowrap",
+        "gap":             "16px",
+    },
+    width="100%",
+    padx=0,
+    pady=0,
+)
+
+print(page.getHTML(format=True))
+```
+
+<Tip>
+  Pass `width="100%"` on the outer frame and individual column widths (fixed or
+  percentage) on the inner frames to control proportions. Use `gap` in
+  `flex_config` instead of margins to maintain even spacing between columns.
+</Tip>
+
+## Card grid layout
+
+Cards are just Frames with a visible border, rounded corners, and padding. Placing several card `Parent` objects into a wrapping flex container with `flex-wrap: wrap` produces a responsive grid that reflows when the viewport narrows.
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+def make_card(title, body, accent="#00a651"):
+    """Helper that returns a populated Parent ready to be used as Frame content."""
+    card = py2html.Parent()
+    card.Heading(level=3, text=title, fg=accent)
+    card.Label(text=body, fg="#444")
+    card.Button(text="Read More", fg=accent, bg="#f0fff8", bdradius="6px")
+    return card
+
+# Build individual cards
+card_contents = [
+    make_card("Getting Started",  "Install py2html and build your first page in minutes."),
+    make_card("Layouts",          "Nest Frames to create multi-column and grid layouts."),
+    make_card("JavaScript",       "Add interactivity using the Script() method."),
+    make_card("GUI Editor",       "Use the visual editor to drag and drop elements."),
+]
+
+# Wrap each card in a Frame and add to a shared grid parent
+grid = py2html.Parent()
+for content in card_contents:
+    grid.Frame(
+        content=content,
+        bg="#ffffff",
+        bd="1px solid #e0e0e0",
+        bdradius="12px",
+        width="280px",
+        padx=20,
+        pady=20,
+    )
+
+# Outer flex container with wrapping enabled
+page.Frame(
+    content=grid,
+    content_manager="flex",
+    flex_config={
+        "flex-direction":  "row",
+        "align-items":     "stretch",
+        "justify-content": "flex-start",
+        "flex-wrap":       "wrap",
+        "gap":             "24px",
+    },
+    padx=32,
+    pady=32,
+    bg="#f9f9f9",
+    width="100%",
+)
+
+page.saveToFile("cards.html")
+```
+
+## Absolute positioning and overlays
+
+Setting `position="absolute"` on a `Frame` and providing an `offset` dict lets you place elements precisely over their containing block. The parent container must have `position="relative"` (or another non-static value) for the offset coordinates to be anchored correctly.
+
+<Warning>
+  Absolute positioning removes an element from normal document flow. Always
+  ensure the parent frame has a defined `height` or sufficient content to
+  prevent the container from collapsing around the overlay.
+</Warning>
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+# Badge label to overlay in the top-right corner of a card
+badge = py2html.Parent()
+badge.Label(text="New", fg="#fff", bg="#00a651", padx=6, pady=2)
+
+# Card content (sits in normal flow)
+card_body = py2html.Parent()
+card_body.Heading(level=3, text="Featured Article")
+card_body.Label(text="An introduction to py2html nesting patterns.")
+
+# Overlay: the badge Frame is position=absolute
+overlay_group = py2html.Parent()
+overlay_group.Frame(
+    content=card_body,
+    padx=20,
+    pady=20,
+)
+overlay_group.Frame(
+    content=badge,
+    position="absolute",
+    offset={"top": "10px", "left": "auto", "right": "10px", "bottom": "auto"},
+    padx=0,
+    pady=0,
+    bg="transparent",
+)
+
+# Outer card — position=relative anchors the absolute child
+page.Frame(
+    content=overlay_group,
+    bg="#fff",
+    bd="1px solid #ddd",
+    bdradius="12px",
+    width="360px",
+    position="relative",
+    padx=0,
+    pady=0,
+)
+
+print(page.getHTML(format=True))
+```
+
+<Note>
+  The `offset` dict supports all four sides: `top`, `left`, `right`, and
+  `bottom`. Any side you do not want to constrain should be set to `"auto"`.
+  Omitting a key falls back to the `Frame()` default, which is `"auto"` for
+  `right` and `bottom` and `"0px"` for `top` and `left`.
+</Note>

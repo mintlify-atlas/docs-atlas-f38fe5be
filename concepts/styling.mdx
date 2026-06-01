@@ -1,0 +1,309 @@
+---
+title: "Styling Elements with py2html's Style Parameters"
+sidebarTitle: "Styling"
+description: "Every py2html element accepts inline style parameters — fg, bg, bd, bdradius, padx, pady, width, height, margin — which are rendered as CSS inline styles."
+---
+
+py2html skips external stylesheets and CSS classes by default: every element carries its visual properties as a `style="…"` attribute built at render time. You set colours, borders, spacing, and layout through plain Python keyword arguments — no CSS string concatenation required. The rendering pipeline in `getHTML()` inspects each tag's dictionary, assembles all non-empty style values into a single CSS string, and writes it directly onto the element's opening tag.
+
+## Universal Style Parameters
+
+The following parameters are available on `Button`, `Label`, `Text`, `Heading`, `Link`, `Frame`, and `CustomTag` unless otherwise noted.
+
+| Parameter  | CSS property        | Default (Button / Label) | Notes                                      |
+|------------|---------------------|--------------------------|--------------------------------------------|
+| `fg`       | `color`             | `#00a651` / `#000`       | Any valid CSS colour value                 |
+| `bg`       | `background`        | `#deffee` / `#fff`       | Accepts colours, gradients, and `transparent` |
+| `bd`       | `border`            | `"none"`                 | Full CSS border shorthand, e.g. `"1px solid #ccc"` |
+| `bdradius` | `border-radius`     | `"50px"`                 | Alias: `bdr` inside the tag dict           |
+| `padx`     | `padding` (x-axis)  | `15`                     | Integer pixels; combined with `pady` as `padding: pady px padx px` |
+| `pady`     | `padding` (y-axis)  | `15`                     | See `padx` note above                      |
+
+<Note>
+py2html stores `padx` and `pady` as a tuple `(padx, pady)` in the tag dict. The CSS output is `padding: {pady}px {padx}px;` — vertical first, then horizontal, matching the CSS shorthand convention.
+</Note>
+
+### Colour Example
+
+```python
+from py2html import Parent
+
+page = Parent()
+
+page.Button(
+    text="Save",
+    fg="#ffffff",
+    bg="#0070f3",
+    bd="none",
+    bdradius="6px",
+    padx=20,
+    pady=12,
+)
+
+page.Label(
+    text="Unsaved changes",
+    fg="#b45309",
+    bg="#fef3c7",
+    bd="1px solid #f59e0b",
+    bdradius="4px",
+    padx=12,
+    pady=8,
+)
+```
+
+## `Frame`-Only Style Parameters
+
+`Frame` maps to a `<div>` and supports several layout-specific parameters that other elements do not have.
+
+| Parameter          | CSS property   | Default         | Notes                                                 |
+|--------------------|----------------|-----------------|-------------------------------------------------------|
+| `width`            | `width`        | `"auto"`        | Any valid CSS width, e.g. `"320px"`, `"100%"`         |
+| `height`           | `height`       | `"auto"`        | Any valid CSS height                                  |
+| `marginx`          | `margin` (x)   | `0`             | Combined with `marginy` as `margin: marginy marginx`  |
+| `marginy`          | `margin` (y)   | `0`             | See `marginx` note                                    |
+| `content_manager`  | `display`      | `"block"`       | `"block"`, `"inline"`, `"flex"`, `"grid"`, etc.       |
+| `position`         | `position`     | `"static"`      | `"static"`, `"relative"`, `"absolute"`, `"fixed"`, `"sticky"` |
+| `offset`           | `top` / `left` / `right` / `bottom` | `{"top":"0px","left":"0px","right":"auto","bottom":"auto"}` | Only meaningful when `position` is non-static |
+
+## Flex Layout with `flex_config`
+
+When `content_manager="flex"` is set on a `Frame`, the `flex_config` dict is expanded into individual CSS flex properties. Pass only the keys you want to change — the defaults fill in the rest.
+
+| `flex_config` key    | CSS property       | Default         |
+|----------------------|--------------------|-----------------|
+| `"align-items"`      | `align-items`      | `"flex-start"`  |
+| `"justify-content"`  | `justify-content`  | `"flex-start"`  |
+| `"flex-direction"`   | `flex-direction`   | `"row"`         |
+| `"flex-wrap"`        | `flex-wrap`        | `"nowrap"`      |
+| `"gap"`              | `gap`              | `"0px"`         |
+
+```python
+from py2html import Parent
+
+# Horizontal card row with flex
+cards = Parent()
+for label in ["Alpha", "Beta", "Gamma"]:
+    cards.Frame(
+        content=label,
+        bg="#f0f4ff",
+        bd="1px solid #c7d2fe",
+        bdradius="8px",
+        padx=16,
+        pady=16,
+        width="160px",
+    )
+
+page = Parent()
+page.Frame(
+    content=cards,
+    content_manager="flex",
+    flex_config={
+        "flex-direction": "row",
+        "gap": "16px",
+        "align-items": "stretch",
+        "justify-content": "flex-start",
+    },
+    padx=24,
+    pady=24,
+)
+```
+
+## `Link`-Only Style Parameter
+
+`Link` adds one extra parameter not shared by other elements:
+
+| Parameter    | CSS property      | Default       |
+|--------------|-------------------|---------------|
+| `text_decor` | `text-decoration` | `"underline"` |
+
+```python
+page.Link(
+    href="https://py2html.dev",
+    text="Documentation",
+    fg="#0070f3",
+    bg="transparent",
+    text_decor="none",        # remove the underline
+)
+```
+
+## Positioned Overlay with `offset`
+
+Use `position="absolute"` (or `"fixed"`) together with the `offset` dict to place a `Frame` at an exact position. `offset` accepts the keys `top`, `left`, `right`, and `bottom` as CSS length strings.
+
+```python
+from py2html import Parent
+
+page = Parent()
+page.config(title="Overlay Demo")
+
+# Full-page container that acts as the positioning context
+wrapper = Parent()
+wrapper.Label(text="Background content", padx=0, pady=0)
+
+overlay_content = Parent()
+overlay_content.Label(
+    text="[* Pinned Banner *]",
+    fg="#fff",
+    bg="transparent",
+    padx=0,
+    pady=0,
+)
+
+wrapper.Frame(
+    content=overlay_content,
+    bg="rgba(0,0,0,0.75)",
+    bdradius="0px",
+    padx=16,
+    pady=12,
+    width="100%",
+    position="fixed",
+    offset={"top": "0px", "left": "0px", "right": "auto", "bottom": "auto"},
+    content_manager="block",
+)
+
+page.Frame(
+    content=wrapper,
+    position="relative",
+    width="100%",
+    height="100vh",
+    padx=0,
+    pady=0,
+)
+```
+
+## How Styles Are Assembled in `getHTML()`
+
+When rendering, `getHTML()` reads each tag dictionary and builds a `style_parts` list by checking each style key in order:
+
+```
+color → background → border → border-radius → padding →
+width → height → margin → text-decoration → display →
+(flex properties, if display=flex) → position → z-index → offset
+```
+
+Only keys that are present **and truthy** in the dict are emitted. The list is joined with spaces and written as `style='…'` on the opening tag. If no style keys are set, no `style` attribute is added at all.
+
+<Tip>
+Because styles are inline, they always take precedence over any external stylesheet you might link with `CustomTag` or a `<link>` element. This makes py2html elements highly predictable but harder to override from CSS files.
+</Tip>
+
+## Custom HTML Attributes with `CustomTag`
+
+`CustomTag` lets you emit any HTML tag and pass arbitrary keyword arguments as HTML attributes alongside the standard style parameters. Extra kwargs are collected into an `attrs` dict and serialised as `key="value"` pairs (with values HTML-escaped).
+
+```python
+from py2html import Parent
+
+page = Parent()
+
+# <input type="email" placeholder="Enter email" required="True" />
+page.CustomTag(
+    tag_name="input",
+    fg=None,
+    bg=None,
+    type="email",
+    placeholder="Enter email",
+    required=True,
+)
+
+# Styled <section> with a data attribute
+page.CustomTag(
+    tag_name="section",
+    content="Main content area",
+    fg="#111",
+    bg="#fafafa",
+    bd="1px solid #e5e7eb",
+    bdradius="8px",
+    padx=24,
+    pady=24,
+    data_section="hero",     # rendered as data_section="hero"
+)
+```
+
+<Note>
+Python does not allow hyphens in keyword argument names. HTML attributes like `data-section` must be written as underscores (`data_section`) and will appear in the rendered HTML with underscores unless you post-process the output.
+</Note>
+
+## Complete Styled Page Example
+
+<CodeGroup>
+
+```python Full Example
+from py2html import Parent
+
+page = Parent()
+page.config(title="Styled Demo")
+
+# Hero section
+hero_content = Parent()
+hero_content.Heading(
+    level=1,
+    text="Build HTML with Python",
+    fg="#ffffff",
+    bg="transparent",
+    padx=0,
+    pady=0,
+)
+hero_content.Button(
+    text="Get Started",
+    fg="#0070f3",
+    bg="#ffffff",
+    bd="none",
+    bdradius="6px",
+    padx=20,
+    pady=12,
+)
+
+page.Frame(
+    content=hero_content,
+    bg="linear-gradient(135deg, #0070f3, #00a651)",
+    padx=48,
+    pady=64,
+    width="100%",
+    content_manager="flex",
+    flex_config={
+        "flex-direction": "column",
+        "align-items": "center",
+        "justify-content": "center",
+        "gap": "24px",
+    },
+)
+
+# Feature cards row
+cards = Parent()
+for title, desc in [
+    ("Fast", "No build step required."),
+    ("Simple", "Pure Python API."),
+    ("Flexible", "Emit any HTML tag."),
+]:
+    card_inner = Parent()
+    card_inner.Heading(level=3, text=title, fg="#1a1a2e", padx=0, pady=0)
+    card_inner.Label(text=desc, fg="#555", bg="transparent", padx=0, pady=4)
+    cards.Frame(
+        content=card_inner,
+        bg="#ffffff",
+        bd="1px solid #e5e7eb",
+        bdradius="10px",
+        padx=24,
+        pady=24,
+        width="220px",
+    )
+
+page.Frame(
+    content=cards,
+    bg="#f9fafb",
+    padx=32,
+    pady=40,
+    content_manager="flex",
+    flex_config={
+        "flex-direction": "row",
+        "gap": "20px",
+        "justify-content": "center",
+        "flex-wrap": "wrap",
+    },
+)
+
+page.saveToFile("index.html")
+```
+
+</CodeGroup>

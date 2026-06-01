@@ -1,47 +1,304 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Quickstart: Create Your First py2html Page"
+sidebarTitle: "Quickstart"
+description: "Build a complete HTML page with py2html in minutes. Learn how to create a Parent, add elements, and render the output as an HTML file."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+This guide walks you through building a complete HTML page from scratch using py2html. In fewer than 30 lines of Python you will create a heading, a paragraph, a button, a link, an image, and a container `Frame` — then render the whole thing to a formatted `.html` file.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+<Note>
+  Make sure py2html is installed and importable before continuing. See the [Installation](/installation) guide if you have not set it up yet.
+</Note>
 
-## Prerequisites
+## Full example
 
-Before you begin, you must have:
+The code below demonstrates every element covered in this quickstart. Read through it once, then follow the step-by-step breakdown underneath.
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+<CodeGroup>
+```python build_page.py
+import sys
+from pathlib import Path
 
-## Get started
+# Adjust this if py2html lives somewhere other than ~/py2html/
+sys.path.insert(0, str(Path.home()))
+
+import py2html
+
+# 1. Create the root Parent object
+page = py2html.Parent()
+
+# 2. Add a top-level heading
+page.Heading(
+    level=1,
+    text="Welcome to py2html",
+    fg="#1a1a2e",
+    padx=20,
+    pady=20,
+)
+
+# 3. Add a descriptive paragraph (Label)
+page.Label(
+    text="Build [* complete *] HTML pages using nothing but Python.",
+    fg="#333333",
+    bg="#f9f9f9",
+    padx=20,
+    pady=10,
+)
+
+# 4. Add a call-to-action button
+page.Button(
+    text="Get Started",
+    fg="#ffffff",
+    bg="#00a651",
+    bdradius="8px",
+    padx=20,
+    pady=10,
+)
+
+# 5. Add a hyperlink
+page.Link(
+    href="https://github.com/nishad12323/py2html",
+    text="View the source on GitHub",
+    fg="#0070f3",
+    padx=20,
+    pady=5,
+    text_decor="underline",
+)
+
+# 6. Add an image
+page.Image(
+    src="https://via.placeholder.com/400x200",
+    alt="A placeholder image",
+    width="400px",
+    height="200px",
+    bdradius="8px",
+)
+
+# 7. Build a Frame that groups two child elements side by side
+card_content = py2html.Parent()
+card_content.Label(
+    text="[xl Card Title xl]",
+    fg="#1a1a2e",
+    bg="transparent",
+    padx=10,
+    pady=4,
+)
+card_content.Label(
+    text="This label lives inside a flex Frame.",
+    fg="#555555",
+    bg="transparent",
+    padx=10,
+    pady=4,
+)
+
+page.Frame(
+    content=card_content,
+    bg="#eef6ff",
+    bdradius="12px",
+    padx=16,
+    pady=16,
+    content_manager="flex",
+    flex_config={
+        "flex-direction": "column",
+        "align-items": "flex-start",
+        "justify-content": "flex-start",
+        "flex-wrap": "nowrap",
+        "gap": "8px",
+    },
+)
+
+# 8. Render and save
+html_output = page.getHTML(format=True)
+print(html_output)
+page.saveToFile("index.html")
+print("Saved to index.html")
+```
+</CodeGroup>
+
+## Step-by-step breakdown
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Create the Parent object">
+    Every py2html page starts with a `Parent`. It maintains an ordered list of all elements you add and is responsible for rendering the final HTML.
 
-    ```bash
-    npm install your-package
+    ```python
+    import py2html
+
+    page = py2html.Parent()
+    ```
+
+    At this point `page` holds an empty element list. The root `<html>`, `<head>`, and `<body>` tags are added automatically when you call `getHTML()`.
+  </Step>
+
+  <Step title="Add a Heading">
+    `Heading` renders an `<h1>` through `<h6>` tag. The `level` parameter controls which heading rank is used.
+
+    ```python
+    page.Heading(
+        level=1,
+        text="Welcome to py2html",
+        fg="#1a1a2e",
+        padx=20,
+        pady=20,
+    )
+    ```
+
+    <Tip>
+      Text passed to any element method is **automatically HTML-escaped**. You do not need to sanitise user-supplied strings before passing them in.
+    </Tip>
+
+    The method appends the heading to `page.tags` and returns the integer index of the new element — useful if you want to reference it later.
+  </Step>
+
+  <Step title="Add a Label and a Button">
+    `Label` renders a `<p>` tag. `Button` renders a `<button>` tag. Both accept the same colour and padding parameters.
+
+    ```python
+    # Inline markup: [* … *] wraps text in <strong>
+    page.Label(
+        text="Build [* complete *] HTML pages using nothing but Python.",
+        fg="#333333",
+        bg="#f9f9f9",
+        padx=20,
+        pady=10,
+    )
+
+    page.Button(
+        text="Get Started",
+        fg="#ffffff",
+        bg="#00a651",
+        bdradius="8px",
+        padx=20,
+        pady=10,
+    )
+    ```
+
+    Notice the `[* … *]` syntax inside the `Label` text. py2html's inline markup processor converts this to `<strong>…</strong>` automatically.
+  </Step>
+
+  <Step title="Add a Link and an Image">
+    `Link` renders an `<a>` tag. The `href` parameter is kept raw (not HTML-escaped as content) so that valid URLs are preserved correctly.
+
+    `Image` renders a self-closing `<img />` tag. Supply `width` and `height` as CSS strings such as `"400px"` or `"50%"`.
+
+    ```python
+    page.Link(
+        href="https://github.com/nishad12323/py2html",
+        text="View the source on GitHub",
+        fg="#0070f3",
+        padx=20,
+        pady=5,
+        text_decor="underline",
+    )
+
+    page.Image(
+        src="https://via.placeholder.com/400x200",
+        alt="A placeholder image",
+        width="400px",
+        height="200px",
+        bdradius="8px",
+    )
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
+  <Step title="Group elements in a Frame">
+    `Frame` renders a `<div>`. To place multiple elements inside it, first create a **child `Parent`**, add elements to that, then pass it as the `content` argument.
+
+    ```python
+    card_content = py2html.Parent()
+    card_content.Label(text="[xl Card Title xl]", fg="#1a1a2e", bg="transparent", padx=10, pady=4)
+    card_content.Label(text="This label lives inside a flex Frame.", fg="#555555", bg="transparent", padx=10, pady=4)
+
+    page.Frame(
+        content=card_content,
+        bg="#eef6ff",
+        bdradius="12px",
+        padx=16,
+        pady=16,
+        content_manager="flex",
+        flex_config={
+            "flex-direction": "column",
+            "align-items": "flex-start",
+            "justify-content": "flex-start",
+            "flex-wrap": "nowrap",
+            "gap": "8px",
+        },
+    )
     ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
+    Setting `content_manager="flex"` enables flexbox on the container. The `flex_config` dictionary maps directly to CSS flex properties.
+  </Step>
+
+  <Step title="Render to HTML and save to file">
+    Call `getHTML(format=True)` to produce a complete, prettified HTML string. Use `saveToFile()` to write it to disk in one call.
+
+    ```python
+    # Print the formatted HTML to stdout
+    html_output = page.getHTML(format=True)
+    print(html_output)
+
+    # Write to a file
+    page.saveToFile("index.html")
+    ```
+
+    `saveToFile` opens the file in write mode and calls `getHTML()` internally (without `format=True`). If you want the prettified version saved, write it yourself:
+
+    ```python
+    with open("index.html", "w") as f:
+        f.write(page.getHTML(format=True))
     ```
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Expected HTML output (abbreviated)
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Running the example produces a document similar to the following. The exact whitespace depends on `BeautifulSoup.prettify()`.
+
+```html
+<html>
+ <head>
+  <title>
+   Py2HTML Site
+  </title>
+ </head>
+ <body style="padding: 0; margin: 0;">
+  <h1 style="color: #1a1a2e; background: transparent; border: none; border-radius: 0px; padding: 20px 20px;">
+   Welcome to py2html
+  </h1>
+  <p style="color: #333333; background: #f9f9f9; border: none; border-radius: 50px; padding: 10px 20px;">
+   Build <strong>complete</strong> HTML pages using nothing but Python.
+  </p>
+  <button style="color: #ffffff; background: #00a651; border: none; border-radius: 8px; padding: 10px 20px;">
+   Get Started
+  </button>
+  <a href="https://github.com/nishad12323/py2html"
+     style="color: #0070f3; background: transparent; border: none; border-radius: 0px;
+            padding: 5px 20px; text-decoration: underline;">
+   View the source on GitHub
+  </a>
+  <img style="border: none; border-radius: 8px; width: 400px; height: 200px;"
+       src="https://via.placeholder.com/400x200"
+       alt="A placeholder image"/>
+  <div style="color: #000; background: #eef6ff; border: none; border-radius: 12px;
+              padding: 16px 16px; width: auto; height: auto; margin: 0 0;
+              display: flex; align-items: flex-start; justify-content: flex-start;
+              flex-direction: column; flex-wrap: nowrap; gap: 8px; position: static; …">
+   <p style="…">
+    <span style="font-size: 1.5rem;">Card Title</span>
+   </p>
+   <p style="…">
+    This label lives inside a flex Frame.
+   </p>
+  </div>
+ </body>
+</html>
+```
+
+## Next steps
+
+Now that you have a working page, explore the rest of the element API:
+
+- Add inline JavaScript with `page.Script(code="alert('hello!')")`
+- Insert raw HTML with `page.TextNode(text="<hr>", escape=False)`
+- Use any HTML tag name with `page.CustomTag(tag_name="article", content="…")`
+- Build multi-section layouts by nesting `Frame` containers inside each other

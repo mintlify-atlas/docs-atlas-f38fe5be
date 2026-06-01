@@ -1,0 +1,167 @@
+---
+title: "Adding JavaScript to py2html Pages"
+sidebarTitle: "JavaScript"
+description: "Embed inline JavaScript or reference external scripts in py2html pages using the Script() method. Script content is never HTML-escaped."
+---
+
+py2html pages are static HTML documents, but they can include fully interactive JavaScript through the `Script()` method. Calling `Script()` appends a `<script>` tag to the current `Parent` object, and you can use it for inline code, external file references, or ES module imports. Unlike text content added through `Label()` or `Button()`, the JavaScript you supply is stored and rendered completely raw — no HTML escaping is applied.
+
+## Script() signature
+
+```python
+Script(code="", src=None, **kwargs)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `code` | `str` | Inline JavaScript to embed inside the `<script>` tag. Stored raw, never HTML-escaped. |
+| `src` | `str` | URL or path to an external `.js` file. Rendered as the `src` attribute. |
+| `**kwargs` | any | Extra HTML attributes passed to the `<script>` tag (e.g., `type`, `defer`, `async_`). |
+
+<Warning>
+  If you supply both `code` and `src`, py2html prints a warning to `stderr` and
+  silently discards the inline `code`. Only the `src` attribute will appear in
+  the rendered tag. Never supply both at once.
+</Warning>
+
+## Inline JavaScript
+
+Pass your JavaScript as a string to the `code` parameter. The content is placed verbatim between the opening and closing `<script>` tags. This means you can use any JavaScript syntax, including template literals, regular expressions, and angle brackets, without worrying about HTML entity encoding.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Interactive Page")
+page.Button(text="Click me")
+
+page.Script(code="""
+document.querySelector('button').addEventListener('click', function () {
+    alert('Hello from py2html!');
+});
+""")
+
+page.saveToFile("interactive.html")
+```
+
+<Note>
+  Inline JavaScript is stored as a raw string and is never run through
+  py2html's `escapeCharacters()` method. Characters like `<`, `>`, `&`, and
+  `"` in your JavaScript will appear exactly as written in the output file.
+  Only use inline scripts from trusted sources.
+</Note>
+
+## External script file
+
+Use the `src` parameter to load a JavaScript file from a URL or a relative path. py2html HTML-escapes the `src` value itself (so the URL is safe to embed as an HTML attribute), but it generates no inline content between the tags.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="My App")
+page.Label(text="Powered by an external script.")
+
+page.Script(src="https://cdn.example.com/app.js")
+
+page.saveToFile("app.html")
+```
+
+This produces:
+
+```html
+<script src="https://cdn.example.com/app.js"></script>
+```
+
+## Passing HTML attributes via kwargs
+
+Any keyword argument beyond `code` and `src` is rendered as an HTML attribute on the `<script>` tag. This covers common attributes like `type`, `defer`, and `async`.
+
+<CodeGroup>
+```python Deferred module script
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="ES Module Example")
+
+# type="module" enables import/export syntax.
+# defer=True ensures the script runs after the document is parsed.
+page.Script(
+    src="/static/js/main.module.js",
+    type="module",
+    defer=True,
+)
+
+page.saveToFile("module.html")
+```
+
+```python Async third-party script
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Analytics Page")
+
+page.Script(
+    src="https://analytics.example.com/tracker.js",
+    async_=True,
+)
+
+page.saveToFile("analytics.html")
+```
+
+```python Inline module with import
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Module Inline")
+
+page.Script(
+    code="""
+import { greet } from '/static/js/utils.module.js';
+greet('World');
+""",
+    type="module",
+)
+
+page.saveToFile("inline_module.html")
+```
+</CodeGroup>
+
+The kwargs are emitted directly as attribute strings. For example, `defer=True` renders as `defer="True"`, and `type="module"` renders as `type="module"`.
+
+<Tip>
+  Place `Script()` calls at the end of your element list, just before calling
+  `getHTML()` or `saveToFile()`. This mirrors the HTML best practice of loading
+  scripts after the document body so elements are available in the DOM when the
+  script runs.
+</Tip>
+
+## Complete example
+
+The following example builds a small page with a counter button, an external utility library, and a deferred inline initialiser script.
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+page.Heading(level=1, text="Click Counter", fg="#333")
+page.Button(text="Click me — 0 clicks", fg="#fff", bg="#00a651", bdradius="8px")
+page.Label(text="Watch the button text update as you click.")
+
+# External dependency loaded async so it does not block rendering
+page.Script(src="https://cdn.example.com/lodash.min.js", async_=True)
+
+# Inline script wired to the button — runs after DOM is ready
+page.Script(code="""
+var count = 0;
+var btn = document.querySelector('button');
+btn.addEventListener('click', function () {
+    count += 1;
+    btn.textContent = 'Click me \u2014 ' + count + ' click' + (count === 1 ? '' : 's');
+});
+""")
+
+page.saveToFile("counter.html")
+print("Saved counter.html")
+```

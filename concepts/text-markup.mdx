@@ -1,0 +1,158 @@
+---
+title: "Inline Text Markup Syntax in py2html"
+sidebarTitle: "Text Markup"
+description: "py2html's escapeCharacters() method supports a shorthand markup syntax for bold, italic, code, font sizes, and centering inside any text content field."
+---
+
+Every text value you pass to a py2html element method — `Label`, `Button`, `Heading`, `Link`, `Frame`, and so on — is automatically processed by `escapeCharacters()` before it is stored in the tag dictionary. This single method does two things at once: it HTML-escapes dangerous characters so your strings are safe to embed in a page, and it expands a set of lightweight bracket-based tokens into real HTML inline elements. You can write `[* bold *]` in a heading's `text` argument and get `<strong>bold</strong>` in the output — no string concatenation or manual HTML required.
+
+## How `escapeCharacters()` Works
+
+`escapeCharacters(text)` is a method on `Parent`. It is called internally by every element method that accepts a text value, so you rarely need to call it yourself. The processing happens in two passes:
+
+1. **HTML-escape special characters** — turns `&`, `<`, `>`, `"`, and `'` into their safe HTML entity equivalents, and converts whitespace control characters into HTML equivalents.
+2. **Expand markup tokens** — replaces bracketed shorthand tokens with the corresponding HTML tags.
+
+Because HTML-escaping runs *before* token expansion, tokens themselves are never accidentally escaped — the square brackets and their payload are matched on the original text, then replaced with literal HTML tag strings.
+
+### Special Character Escaping
+
+| Raw character | HTML output          |
+|---------------|----------------------|
+| `&`           | `&amp;`              |
+| `<`           | `&lt;`               |
+| `>`           | `&gt;`               |
+| `"`           | `&quot;`             |
+| `'`           | `&#39;`              |
+| `\n`          | `<br>`               |
+| `\t`          | `&nbsp;&nbsp;&nbsp;&nbsp;` (4 non-breaking spaces) |
+
+## Markup Token Reference
+
+The full set of supported tokens is listed below. Tokens follow the pattern `[token content token]` — an opening tag made of `[` + keyword, the content, then the closing keyword + `]`.
+
+| Token syntax            | HTML output                                       | Description           |
+|-------------------------|---------------------------------------------------|-----------------------|
+| `[* bold *]`            | `<strong>bold</strong>`                           | Bold text             |
+| `[_ italic _]`          | `<em>italic</em>`                                 | Italic text           |
+| `` [` inline code `] `` | `<code>inline code</code>`                        | Inline code span      |
+| ` [``` block code ```] `| `<pre><code>block code</code></pre>`              | Preformatted code block |
+| `[c centered c]`        | `<center>centered</center>`                       | Centered text         |
+| `[xxs text xxs]`        | `<span style='font-size: 0.4rem;'>text</span>`    | Extra-extra-small     |
+| `[xs text xs]`          | `<span style='font-size: 0.6rem;'>text</span>`    | Extra-small           |
+| `[s text s]`            | `<span style='font-size: 0.8rem;'>text</span>`    | Small                 |
+| `[m text m]`            | `<span style='font-size: 1rem;'>text</span>`      | Medium (base size)    |
+| `[l text l]`            | `<span style='font-size: 1.2rem;'>text</span>`    | Large                 |
+| `[xl text xl]`          | `<span style='font-size: 1.5rem;'>text</span>`    | Extra-large           |
+| `[xxl text xxl]`        | `<span style='font-size: 2rem;'>text</span>`      | Extra-extra-large     |
+| `[xxxl text xxxl]`      | `<span style='font-size: 3rem;'>text</span>`      | Triple-extra-large    |
+
+<Note>
+Opening font-size tokens require a **trailing space**: `[xl ` not `[xl`. The closing tokens require a **leading space**: ` xl]` not `xl]`. This mirrors natural prose spacing and avoids false matches inside regular words.
+</Note>
+
+## Controlling Escaping with the `escape` Parameter
+
+Two places in the API expose an `escape` flag that bypasses `escapeCharacters()` entirely:
+
+### `TextNode(text, escape=True)`
+
+`TextNode` adds raw text to the tag list. Pass `escape=False` to inject pre-built HTML strings without double-escaping.
+
+```python
+page = Parent()
+
+# Default: text is escaped and markup tokens are expanded
+page.TextNode("[* Important: *] Read the [_ fine print _].")
+
+# escape=False: raw HTML is inserted verbatim
+page.TextNode("<strong>Raw HTML</strong>", escape=False)
+```
+
+### `__call__(*args, escape=True, sep=" ")`
+
+Calling a `Parent` directly is shorthand for `TextNode`. The same `escape` keyword applies:
+
+```python
+page = Parent()
+page("Hello [* world *]!")           # escape=True (default)
+page("<hr>", escape=False)           # raw <hr> tag injected
+page("Line 1", "Line 2", sep="\n")   # joined then escaped
+```
+
+<Tip>
+Use `escape=False` only for trusted, pre-sanitised strings. Never pass unsanitised user input with `escape=False` — it creates an XSS risk.
+</Tip>
+
+## Practical Examples
+
+<CodeGroup>
+
+```python Label with Markup
+from py2html import Parent
+
+page = Parent()
+
+# Bold and italic inside a Label
+page.Label(
+    text="[* py2html *] makes HTML [_ easy _].",
+    fg="#1a1a2e",
+    bg="#ffffff",
+    padx=16,
+    pady=10,
+)
+
+print(str(page))
+```
+
+```python Button with Font Size Token
+from py2html import Parent
+
+page = Parent()
+
+# Large label text on a button
+page.Button(
+    text="[xl Get Started xl]",
+    fg="#ffffff",
+    bg="#0070f3",
+    bdradius="6px",
+    padx=12,
+    pady=20,
+)
+```
+
+```python TextNode with Multiple Tokens
+from py2html import Parent
+
+page = Parent()
+
+page.TextNode(
+    "[xxxl Welcome xxxl]\n"
+    "[c [_ The fast way to build HTML pages in Python _] c]\n"
+    "[` pip install py2html `]"
+)
+
+print(str(page))
+```
+
+```python Heading with Code Token
+from py2html import Parent
+
+page = Parent()
+
+page.Heading(
+    level=2,
+    text="Install with [` pip install py2html `]",
+    fg="#333",
+)
+```
+
+</CodeGroup>
+
+## Token Nesting and Ordering
+
+`escapeCharacters` applies all replacements in a fixed sequence. Outer tokens are replaced independently of inner ones — tokens do not nest. For example, `[* bold and [_ italic _] *]` will produce `<strong>bold and <em>italic</em></strong>` only because both patterns are replaced in the same pass; py2html does not validate bracket pairing.
+
+<Note>
+Token replacement is purely textual (Python `str.replace`). There is no parser, so mismatched or overlapping tokens may produce malformed HTML. Keep each token on its own level and avoid nesting the same token type.
+</Note>

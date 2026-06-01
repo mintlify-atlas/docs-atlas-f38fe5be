@@ -1,0 +1,225 @@
+---
+title: "The Parent Object: py2html's Core Document Model"
+sidebarTitle: "Parent Object"
+description: "The Parent class is py2html's central object. Every HTML page is a Parent instance that holds an ordered list of element dictionaries rendered to HTML on demand."
+---
+
+The `Parent` class is the single building block every py2html project starts with. It acts as both a document root and a reusable container: it keeps an internal, ordered list of element dictionaries (`self.tags`), exposes methods that append to that list, and renders the whole structure to an HTML string whenever you call `getHTML()`. Once you understand how `Parent` manages its tag list, every other part of the library falls into place.
+
+## Internal Structure: `self.tags`
+
+When you instantiate `Parent`, two attributes are created:
+
+- `self.html` — a working string used during rendering (reset on each `getHTML()` call).
+- `self.tags` — a plain Python `list` of dictionaries, one per element.
+
+Every element method (e.g. `Button`, `Label`, `Frame`) appends a dictionary to `self.tags` that describes the element's tag type, text content, and style values. The list order is exactly the order the elements appear in the rendered HTML.
+
+```python
+from py2html import Parent
+
+page = Parent()
+print(page.tags)   # []
+
+page.Button(text="Click me")
+page.Label(text="Hello world")
+
+print(len(page.tags))   # 2
+print(page.tags[0])     # {'type': 'button', 'fg': '#00a651', ...}
+```
+
+## Adding Elements and the Returned Index
+
+Every element method returns `len(self.tags) - 1` — the zero-based index of the element it just added. Store this value to reference the tag dict later via `__getitem__`, or to delete it with `__delitem__`.
+
+```python
+page = Parent()
+
+btn_idx  = page.Button(text="Submit", fg="#fff", bg="#0070f3")
+lbl_idx  = page.Label(text="Status: OK")
+link_idx = page.Link(href="https://example.com", text="Visit us")
+
+print(btn_idx)   # 0
+print(lbl_idx)   # 1
+print(link_idx)  # 2
+
+# Access the button's stored dictionary
+print(page[btn_idx])
+# {'type': 'button', 'fg': '#fff', 'bg': '#0070f3', ...}
+```
+
+<Note>
+Indices shift when you delete an element. If you delete index 0, what was index 1 becomes index 0. Re-query `len(page.tags)` after any deletion if you rely on stored indices.
+</Note>
+
+## `__getitem__` and `__delitem__`
+
+`Parent` supports bracket-style access and deletion:
+
+```python
+page = Parent()
+page.Label(text="First")
+page.Label(text="Second")
+
+# Read a tag dict
+print(page[0]["content"])   # First (after escaping)
+
+# Remove the first element
+del page[0]
+print(len(page.tags))       # 1 — only "Second" remains
+```
+
+Both raise `IndexError` for out-of-range indices.
+
+## `__call__`: Adding a TextNode Inline
+
+Calling a `Parent` instance directly is shorthand for `TextNode()`. All positional arguments are joined with the `sep` keyword (default `" "`) and appended as a text node. The `escape` keyword (default `True`) controls HTML-escaping.
+
+```python
+page = Parent()
+page("Hello, world!")          # adds a TextNode with text "Hello, world!"
+page("Line 1", "Line 2")       # joined as "Line 1 Line 2"
+page("<b>raw</b>", escape=False)  # no escaping — raw HTML injected
+```
+
+## `__str__`: Human-Readable HTML
+
+`str(page)` calls `getHTML(format=True)`, which runs the output through BeautifulSoup's `prettify()` for indented, readable HTML. This is the same output that `save()` writes to a file.
+
+```python
+page = Parent()
+page.Heading(level=1, text="Welcome")
+print(str(page))   # pretty-printed full HTML document
+```
+
+## `config(**kwargs)`: Document-Level Settings
+
+Use `config` to set the document title and an optional global stylesheet string:
+
+```python
+page = Parent()
+page.config(
+    title="My py2html Site",
+    style="body { font-family: sans-serif; }"
+)
+```
+
+| kwarg   | Type  | Effect                              |
+|---------|-------|-------------------------------------|
+| `title` | `str` | Sets `self.title` on the `Parent`   |
+| `style` | `str` | Sets `self.style`; must be a string |
+
+<Note>
+`config()` raises `ValueError` if `style` is not a string.
+</Note>
+
+## The `getHTML()` Rendering Pipeline
+
+`getHTML(format=False, insideframe=False)` iterates over `self.tags` and builds the HTML string in three phases:
+
+1. **Document wrapper** — unless `insideframe=True`, a full `<html><head><title>…</title></head><body …>` shell is prepended.
+2. **Element rendering** — for each tag dict, style parts are assembled into a `style="…"` attribute, extra attrs are serialised, and the opening/closing tags are written.
+3. **Closing wrapper** — `</body></html>` is appended (unless `insideframe=True`).
+
+When `format=True`, the final string is passed through `bs4.BeautifulSoup.prettify()` for indentation.
+
+### Self-Closing vs Paired Tags
+
+`getHTML` keeps an internal list of self-closing tags that are rendered as `<tag … />` with no closing tag or content:
+
+```
+img, input, br, hr, link, meta, area, base, col,
+embed, keygen, param, source, track, wbr
+```
+
+Every other recognised tag (e.g. `button`, `p`, `div`, `a`, `h1`–`h6`, `textarea`) is rendered as a `<tag>…content…</tag>` pair.
+
+<Tip>
+`Script` content (inline JavaScript) is intentionally **not** HTML-escaped by `getHTML`, even though it is a paired tag. Attribute values are always escaped.
+</Tip>
+
+## Nesting with `Frame()`
+
+`Frame()` accepts another `Parent` instance as its `content` argument. When it detects a `Parent`, it stores `content.tags` (the inner list) instead of a plain string. During rendering, `getHTML` creates a temporary `Parent`, assigns that inner tag list, and calls `getHTML(insideframe=True)` on it — producing nested HTML without a duplicate `<html>` wrapper.
+
+```python
+from py2html import Parent
+
+# Inner container
+card = Parent()
+card.Heading(level=3, text="Card Title")
+card.Label(text="Some description text.")
+
+# Outer page
+page = Parent()
+page.config(title="Nested Example")
+
+frame_idx = page.Frame(
+    content=card,          # pass the inner Parent directly
+    bg="#f9f9f9",
+    bd="1px solid #ddd",
+    bdradius="8px",
+    padx=20,
+    pady=20,
+    width="320px",
+)
+
+print(page[frame_idx]["type"])   # 'div'
+print(str(page))                 # full HTML with the nested card inside the div
+```
+
+<Note>
+Because `Frame` stores `content.tags` by reference at the time of the call, mutations to `card.tags` **after** the `Frame()` call will **not** be reflected. Build inner `Parent` objects fully before passing them to `Frame`.
+</Note>
+
+## Complete Example
+
+<CodeGroup>
+
+```python Building a Page
+from py2html import Parent
+
+page = Parent()
+page.config(title="Demo Page")
+
+# Add a heading and capture its index
+h_idx = page.Heading(level=1, text="py2html Demo", fg="#1a1a2e")
+
+# Add a styled button
+btn_idx = page.Button(
+    text="Get Started",
+    fg="#ffffff",
+    bg="#0070f3",
+    bdradius="6px",
+    padx=12,
+    pady=20,
+)
+
+# Inspect stored data
+print(page[h_idx]["type"])      # h1
+print(page[btn_idx]["fg"])      # #ffffff
+
+# Remove the heading
+del page[h_idx]
+
+# The button is now at index 0
+print(page[0]["type"])          # button
+
+# Render
+html = page.getHTML()
+print(html[:60])                # <html><head>...
+```
+
+```python Saving to a File
+from py2html import Parent
+
+page = Parent()
+page.config(title="Saved Page")
+page.Heading(level=2, text="Hello from py2html")
+page.Button(text="Click me")
+
+with open("index.html", "w") as f:
+    page.save(f)                # writes prettified HTML
+```
+
+</CodeGroup>

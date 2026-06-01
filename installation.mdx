@@ -1,0 +1,142 @@
+---
+title: "Install py2html in Your Python Project"
+sidebarTitle: "Installation"
+description: "py2html is not on PyPI. Install it using the provided installer script, which sets up the library and its dependencies automatically."
+---
+
+py2html is distributed as a self-contained installer script rather than a PyPI package. Running the script installs the `beautifulsoup4` dependency via pip and writes the `py2html/` package to your home directory. The whole process takes under a minute and requires no manual file copying.
+
+<Note>
+  **py2html is not available on PyPI.** Running `pip install py2html` will not work. You must use the installer script described below, or copy the source file manually as explained in the [manual installation](#manual-installation) section.
+</Note>
+
+## Prerequisites
+
+- **Python 3.6 or newer** — the installer script and the library both rely on f-strings and other modern Python features.
+- **pip** — the installer calls `pip install beautifulsoup4` on your behalf. Ensure pip is available in the same Python environment you intend to use.
+- **tkinter** — the installer displays a small GUI window with a progress bar. tkinter ships with most Python distributions; on Debian/Ubuntu it may require `sudo apt install python3-tk`.
+
+## Installing with the installer script
+
+<Steps>
+  <Step title="Download py2html_installer.py">
+    Grab the installer from the GitHub repository. You can clone the repository or download the file directly:
+
+    ```bash
+    # Clone the full repository
+    git clone https://github.com/nishad12323/py2html.git
+
+    # — or — download only the installer
+    curl -O https://raw.githubusercontent.com/nishad12323/py2html/main/py2html_installer.py
+    ```
+  </Step>
+
+  <Step title="Run the installer">
+    Execute the script with Python 3:
+
+    ```bash
+    python py2html_installer.py
+    ```
+
+    A small Tkinter window labelled **Py2html Installer** will open.
+  </Step>
+
+  <Step title="(Optional) Enable the GUI editor">
+    Before clicking **Install**, check the **Install Py2Html GUI** checkbox if you want the visual editor. The GUI editor requires three additional packages:
+
+    | Package | Purpose |
+    |---|---|
+    | `tkinterweb` | Embedded HTML preview pane inside the editor |
+    | `webview` | Full-browser live preview window |
+    | `sv_ttk` | Sun Valley theme for the editor's Tkinter widgets |
+
+    Install these yourself if the installer does not fetch them automatically:
+
+    ```bash
+    pip install tkinterweb webview sv_ttk
+    ```
+  </Step>
+
+  <Step title="Click Install and wait">
+    Click the **Install** button. The installer will:
+
+    1. Run `pip install beautifulsoup4` in a background thread.
+    2. Create the directory `~/py2html/` (i.e., `py2html/` inside your home folder).
+    3. Write `~/py2html/__init__.py` — this is the py2html library itself.
+    4. If the GUI checkbox was checked, also write `~/py2html/py2htmlGUI.py`.
+
+    A progress bar indicates that installation is in progress. The window title changes to **Installing…** while work is underway.
+  </Step>
+
+  <Step title="Verify the installation">
+    Open a Python shell and confirm the library is importable. Because the library lives in `~/py2html/` you may need to add that path to `sys.path` first:
+
+    ```python
+    import sys
+    from pathlib import Path
+
+    # Add ~/py2html's parent directory so Python can find the py2html package
+    sys.path.insert(0, str(Path.home()))
+
+    import py2html
+    page = py2html.Parent()
+    page.Heading(text="Installation successful!")
+    print(page.getHTML())
+    ```
+
+    If you see a complete HTML document printed to the terminal, py2html is installed correctly.
+  </Step>
+</Steps>
+
+## Making py2html importable without modifying sys.path
+
+The installer places the library at `~/py2html/`. Python will not find it automatically unless `~` (your home directory) is on `sys.path`. Choose one of the approaches below to avoid adding `sys.path` manipulations to every script.
+
+**Option A — Copy into your project**
+
+```
+my_project/
+├── py2html/          ← copy the entire ~/py2html/ folder here
+│   └── __init__.py
+└── build_site.py
+```
+
+Python discovers `py2html` as a local package and `import py2html` works without any path changes.
+
+**Option B — Add the home directory to PYTHONPATH**
+
+```bash
+# Linux / macOS
+export PYTHONPATH="$HOME:$PYTHONPATH"
+
+# Windows (Command Prompt)
+set PYTHONPATH=%USERPROFILE%;%PYTHONPATH%
+```
+
+Add the line to your shell profile (`.bashrc`, `.zshrc`, etc.) to make it permanent.
+
+## Manual installation
+
+If you prefer not to run the installer GUI, copy the source file directly:
+
+```bash
+# From the cloned repository, copy the package folder into your project
+cp -r py2html/  my_project/py2html/
+```
+
+Then install the required dependency manually:
+
+```bash
+pip install beautifulsoup4
+```
+
+That is all that is required for the core library. The `beautifulsoup4` package is the only runtime dependency — it is used by `getHTML(format=True)` to pretty-print the output.
+
+## Dependency summary
+
+| Package | Required for | How to install |
+|---|---|---|
+| `beautifulsoup4` | Core library (`getHTML(format=True)`) | Installed automatically by `py2html_installer.py` |
+| `tkinterweb` | GUI editor preview pane | `pip install tkinterweb` |
+| `webview` | GUI editor live browser preview | `pip install webview` |
+| `sv_ttk` | GUI editor theme | `pip install sv_ttk` |

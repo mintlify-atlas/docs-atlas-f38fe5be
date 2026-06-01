@@ -1,0 +1,255 @@
+---
+title: "Parent Class — py2html API Reference"
+sidebarTitle: "Parent Class"
+description: "Complete reference for the py2html.Parent class: constructor, configuration methods, dunder methods, and the full tag list that backs the document model."
+---
+
+`Parent` is the central class in py2html. Every HTML document you build starts with a `Parent` instance — it holds an ordered list of element descriptors (`self.tags`) and provides methods to add elements, configure document-level properties, and render the final HTML string. All element-creation methods (`Button`, `Frame`, `Link`, etc.) are also defined on this class and are documented separately on the [Elements](/api/elements) page.
+
+---
+
+## Constructor
+
+### `Parent()`
+
+Creates a new, empty HTML document object. No arguments are required.
+
+```python
+import py2html
+
+page = py2html.Parent()
+```
+
+After construction, the instance exposes two attributes:
+
+| Attribute   | Type   | Initial value | Purpose                                    |
+|-------------|--------|---------------|--------------------------------------------|
+| `self.html` | `str`  | `""`          | Scratch buffer written to during rendering |
+| `self.tags` | `list` | `[]`          | Ordered list of element descriptor dicts  |
+
+---
+
+## Configuration Methods
+
+### `config(**kwargs)`
+
+Sets document-level properties in a single call. Currently supports two keyword arguments: `title` and `style`. Any combination may be supplied; omitted keys are left unchanged.
+
+<ParamField body="title" type="str" optional>
+  Sets the document title, stored as `self.title`. The value is coerced to `str`
+  before storing, so integers and other types are accepted.
+</ParamField>
+
+<ParamField body="style" type="str" optional>
+  Sets a document-level style string, stored as `self.style`. **Must** be a `str`
+  — passing any other type raises `ValueError`.
+</ParamField>
+
+**Returns:** `None`
+
+**Raises:** `ValueError` — if `style` is provided but is not a `str`.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.config(title="My Site", style="body { font-family: sans-serif; }")
+```
+
+<Note>
+  `config()` stores `title` and `style` as instance attributes but does not
+  automatically inject `<style>` tags into the rendered output. Use a
+  `CustomTag` or `Script` element to embed stylesheet content.
+</Note>
+
+---
+
+### `title(title)`
+
+A convenience method that sets `self.title` to `str(title)`. Equivalent to calling `config(title=...)` with a single argument.
+
+<ParamField body="title" type="any" required>
+  The document title. Coerced to `str` before being stored.
+</ParamField>
+
+**Returns:** `None`
+
+```python
+page = py2html.Parent()
+page.title("Welcome to py2html")
+```
+
+<Note>
+  `config(title=...)` and `title()` both write to the same `self.title`
+  attribute, so the last call wins if you use both.
+</Note>
+
+---
+
+## Dunder Methods
+
+### `__call__(*args, escape=True, sep=" ")`
+
+Makes a `Parent` instance callable. Joining all positional `args` with `sep`, it calls `TextNode()` internally and appends the resulting text node to `self.tags`.
+
+<ParamField body="*args" type="str" required>
+  One or more strings to join and insert as a text node.
+</ParamField>
+
+<ParamField body="escape" type="bool" default="True">
+  When `True` (default), HTML-special characters in the joined text are escaped
+  via `escapeCharacters()`. Set to `False` to insert raw HTML.
+</ParamField>
+
+<ParamField body="sep" type="str" default='" "'>
+  The separator used when joining multiple positional arguments.
+</ParamField>
+
+**Returns:** The last tag descriptor in `self.tags` — i.e., `self.tags[-1]` (a `dict`).
+
+```python
+page = py2html.Parent()
+
+# Single string
+page("Hello, world!")
+
+# Multiple strings joined by a space (default separator)
+page("Line one.", "Line two.")
+
+# Custom separator — no spaces between
+page("Left", "Right", sep="")
+
+# Raw HTML — no escaping
+page("<strong>Bold text</strong>", escape=False)
+```
+
+<Warning>
+  `__call__` returns `self.tags[-1]`, not the index. If you need the integer
+  index, call `self.TextNode()` directly — it returns `len(self.tags) - 1`.
+</Warning>
+
+---
+
+### `__getitem__(index)`
+
+Retrieves the tag descriptor at the given index from `self.tags`.
+
+<ParamField body="index" type="int" required>
+  Zero-based integer index into `self.tags`.
+</ParamField>
+
+**Returns:** `dict` — the tag descriptor at `self.tags[index]`.
+
+**Raises:** `IndexError` — if `index < 0` or `index >= len(self.tags)`.
+
+```python
+page = py2html.Parent()
+idx = page.Button(text="Click me")
+
+descriptor = page[idx]
+print(descriptor["content"])  # "Click me" (escaped)
+```
+
+<Note>
+  Negative indexing is **not** supported. Passing `-1` raises `IndexError`.
+  Use `page[len(page.tags) - 1]` to access the last element explicitly.
+</Note>
+
+---
+
+### `__delitem__(index)`
+
+Deletes the tag descriptor at the given index from `self.tags`, removing that element from the rendered output.
+
+<ParamField body="index" type="int" required>
+  Zero-based integer index of the tag to remove.
+</ParamField>
+
+**Returns:** `None`
+
+**Raises:** `IndexError` — if `index < 0` or `index >= len(self.tags)`.
+
+```python
+page = py2html.Parent()
+page.Heading(text="Title")        # index 0
+btn_idx = page.Button(text="Go")  # index 1
+
+del page[0]  # removes the Heading
+# page.tags now contains only the Button
+```
+
+<Warning>
+  Deleting an element shifts all subsequent indices down by one. Store
+  indices before bulk deletions or iterate in reverse order.
+</Warning>
+
+---
+
+### `__str__()`
+
+Returns the fully rendered, prettified HTML string for the document. Equivalent to calling `page.getHTML(format=True, insideframe=False)`.
+
+**Returns:** `str` — the complete HTML document, including `<html>`, `<head>`, and `<body>` wrappers, formatted by BeautifulSoup's `prettify()`.
+
+```python
+page = py2html.Parent()
+page.Heading(text="Hello")
+page.Button(text="Click")
+
+print(page)          # prints formatted HTML
+html_str = str(page) # same result as a string
+```
+
+---
+
+## Utility Method
+
+### `escapeCharacters(text)`
+
+Converts a raw string into HTML-safe text and applies py2html's lightweight inline markup syntax. This method is called automatically by every element method that accepts a `text` or `content` argument — you rarely need to call it directly.
+
+<ParamField body="text" type="any" required>
+  The input value. Coerced to `str` before processing.
+</ParamField>
+
+**Returns:** `str` — the escaped and markup-processed string.
+
+The method performs the following transformations in order:
+
+| Input token | HTML output |
+|---|---|
+| `&` | `&amp;` |
+| `<` | `&lt;` |
+| `>` | `&gt;` |
+| `"` | `&quot;` |
+| `'` | `&#39;` |
+| `\n` | `<br>` |
+| `\t` | `&nbsp;&nbsp;&nbsp;&nbsp;` |
+| `[c … c]` | `<center> … </center>` |
+| `[* … *]` | `<strong> … </strong>` |
+| `[_ … _]` | `<em> … </em>` |
+| `` [` … `] `` | `<code> … </code>` |
+| `` [``` … ```] `` | `<pre><code> … </code></pre>` |
+| `[xs … xs]` | `<span style='font-size: 0.6rem;'> … </span>` |
+| `[xxs … xxs]` | `<span style='font-size: 0.4rem;'> … </span>` |
+| `[s … s]` | `<span style='font-size: 0.8rem;'> … </span>` |
+| `[m … m]` | `<span style='font-size: 1rem;'> … </span>` |
+| `[l … l]` | `<span style='font-size: 1.2rem;'> … </span>` |
+| `[xl … xl]` | `<span style='font-size: 1.5rem;'> … </span>` |
+| `[xxl … xxl]` | `<span style='font-size: 2rem;'> … </span>` |
+| `[xxxl … xxxl]` | `<span style='font-size: 3rem;'> … </span>` |
+
+```python
+page = py2html.Parent()
+
+raw = 'Hello <World> & "py2html"\n[* Bold *] and [_ italic _].'
+safe = page.escapeCharacters(raw)
+print(safe)
+# Hello &lt;World&gt; &amp; &quot;py2html&quot;<br><strong> Bold </strong> and <em> italic </em>.
+```
+
+<Tip>
+  Use the inline markup tokens inside any `text` or `content` argument — for
+  example `page.Label(text="[* Important *]")` — without calling
+  `escapeCharacters()` yourself.
+</Tip>

@@ -1,0 +1,645 @@
+---
+title: "Element Methods — py2html API Reference"
+sidebarTitle: "Elements"
+description: "Reference for all element-creation methods on py2html.Parent: Button, Label, Text, Heading, Image, Link, Frame, Script, TextNode, and CustomTag."
+---
+
+Every element method on `Parent` appends a tag descriptor dictionary to `self.tags` and returns the integer index of the newly added element. That index can be used later with `page[index]` to inspect the descriptor, or `del page[index]` to remove the element. All text and content arguments are HTML-escaped via `escapeCharacters()` before storage unless otherwise noted.
+
+---
+
+## Button
+
+```python
+page.Button(fg="#00a651", bg="#deffee", bd="none", bdradius="50px", text="Py2HTML", padx=15, pady=15)
+```
+
+Appends a styled `<button>` element to the document.
+
+<ParamField body="fg" type="str" default='"#00a651"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"#deffee"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"50px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="text" type="str" default='"Py2HTML"'>
+  Inner text of the button. HTML-escaped before rendering.
+</ParamField>
+
+<ParamField body="padx" type="int" default="15">
+  Horizontal padding in pixels — maps to the `padding` shorthand as
+  `padding: {pady}px {padx}px`.
+</ParamField>
+
+<ParamField body="pady" type="int" default="15">
+  Vertical padding in pixels — maps to the `padding` shorthand as
+  `padding: {pady}px {padx}px`.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+idx = page.Button(
+    text="Sign Up",
+    fg="#ffffff",
+    bg="#00a651",
+    bdradius="8px",
+    padx=20,
+    pady=10,
+)
+print(idx)   # 0
+print(page.getHTML(insideframe=True))
+# <button style='color: #ffffff; background: #00a651; border: none; border-radius: 8px; padding: 10px 20px;'>Sign Up</button>
+```
+
+---
+
+## Label
+
+```python
+page.Label(fg="#000", bg="#fff", bd="none", bdradius="50px", text="Py2HTML", padx=15, pady=15)
+```
+
+Appends a styled `<p>` (paragraph) element to the document. Use this for short, block-level text labels.
+
+<ParamField body="fg" type="str" default='"#000"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"#fff"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"50px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="text" type="str" default='"Py2HTML"'>
+  Inner text of the paragraph. HTML-escaped before rendering.
+</ParamField>
+
+<ParamField body="padx" type="int" default="15">
+  Horizontal padding in pixels.
+</ParamField>
+
+<ParamField body="pady" type="int" default="15">
+  Vertical padding in pixels.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+page = py2html.Parent()
+
+page.Label(text="Welcome to the dashboard", fg="#333", bg="#f5f5f5", bdradius="4px")
+print(page.getHTML(insideframe=True))
+# <p style='color: #333; background: #f5f5f5; border: none; border-radius: 4px; padding: 15px 15px;'>Welcome to the dashboard</p>
+```
+
+---
+
+## Text
+
+```python
+page.Text(fg="#000", bg="#deffee", bd="none", bdradius="50px", text="Py2HTML", padx=15, pady=15)
+```
+
+Appends a styled `<textarea>` element to the document. Suitable for pre-filled or read-only text areas.
+
+<ParamField body="fg" type="str" default='"#000"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"#deffee"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"50px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="text" type="str" default='"Py2HTML"'>
+  Default content shown inside the textarea. HTML-escaped before rendering.
+</ParamField>
+
+<ParamField body="padx" type="int" default="15">
+  Horizontal padding in pixels.
+</ParamField>
+
+<ParamField body="pady" type="int" default="15">
+  Vertical padding in pixels.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+page = py2html.Parent()
+
+page.Text(text="Paste your code here…", bg="#1e1e1e", fg="#d4d4d4", bdradius="4px")
+print(page.getHTML(insideframe=True))
+# <textarea style='color: #d4d4d4; background: #1e1e1e; border: none; border-radius: 4px; padding: 15px 15px;'>Paste your code here…</textarea>
+```
+
+---
+
+## Heading
+
+```python
+page.Heading(level=1, text="Py2HTML Heading", fg="#333", bg="transparent", bd="none", bdradius="0px", padx=0, pady=0)
+```
+
+Appends a heading element (`<h1>` through `<h6>`) to the document.
+
+<ParamField body="level" type="int" default="1">
+  Heading level. Must be an integer between `1` and `6` (inclusive). Raises
+  `ValueError` for any other value.
+</ParamField>
+
+<ParamField body="text" type="str" default='"Py2HTML Heading"'>
+  Heading text. HTML-escaped before rendering.
+</ParamField>
+
+<ParamField body="fg" type="str" default='"#333"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"transparent"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"0px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="padx" type="int" default="0">
+  Horizontal padding in pixels.
+</ParamField>
+
+<ParamField body="pady" type="int" default="0">
+  Vertical padding in pixels.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+**Raises:** `ValueError` — if `level` is not between 1 and 6.
+
+```python
+page = py2html.Parent()
+
+page.Heading(level=1, text="Getting Started")
+page.Heading(level=2, text="Installation", fg="#555")
+
+print(page.getHTML(insideframe=True))
+# <h1 style='color: #333; background: transparent; border: none; border-radius: 0px; padding: 0px 0px;'>Getting Started</h1>
+# <h2 style='color: #555; background: transparent; border: none; border-radius: 0px; padding: 0px 0px;'>Installation</h2>
+```
+
+<Warning>
+  Passing `level=0` or `level=7` raises `ValueError: Heading level must be
+  between 1 and 6.`
+</Warning>
+
+---
+
+## Image
+
+```python
+page.Image(src="", alt="", width=None, height=None, bd="none", bdradius="0px")
+```
+
+Appends a self-closing `<img />` element to the document.
+
+<ParamField body="src" type="str" default='""'>
+  URL or path to the image file — rendered as the `src` attribute. The value
+  is HTML-escaped when output.
+</ParamField>
+
+<ParamField body="alt" type="str" default='""'>
+  Alternative text for the image — rendered as the `alt` attribute. The value
+  is HTML-escaped when output.
+</ParamField>
+
+<ParamField body="width" type="str | int | None" default="None">
+  CSS width value (e.g., `"200px"`, `"100%"`). When `None`, no `width` style
+  is emitted.
+</ParamField>
+
+<ParamField body="height" type="str | int | None" default="None">
+  CSS height value (e.g., `"150px"`). When `None`, no `height` style is
+  emitted.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"0px"'>
+  Border radius — maps to the CSS `border-radius` property. Useful for
+  circular avatars.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+page = py2html.Parent()
+
+page.Image(
+    src="https://example.com/logo.png",
+    alt="Site logo",
+    width="120px",
+    height="120px",
+    bdradius="50%",
+)
+print(page.getHTML(insideframe=True))
+# <img style='border: none; border-radius: 50%; width: 120px; height: 120px;' src="https://example.com/logo.png" alt="Site logo" />
+```
+
+---
+
+## Link
+
+```python
+page.Link(href="https://example.com", text="Click Here", fg="#00a651", bg="transparent", bd="none", bdradius="0px", padx=0, pady=0, text_decor="underline")
+```
+
+Appends a styled `<a>` hyperlink element to the document.
+
+<ParamField body="href" type="str" default='"https://example.com"'>
+  The URL the link points to — rendered as the `href` attribute.
+</ParamField>
+
+<ParamField body="text" type="str" default='"Click Here"'>
+  Visible link text. HTML-escaped before rendering.
+</ParamField>
+
+<ParamField body="fg" type="str" default='"#00a651"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"transparent"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"0px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="padx" type="int" default="0">
+  Horizontal padding in pixels.
+</ParamField>
+
+<ParamField body="pady" type="int" default="0">
+  Vertical padding in pixels.
+</ParamField>
+
+<ParamField body="text_decor" type="str" default='"underline"'>
+  Text decoration — maps to the CSS `text-decoration` property.
+  Pass `"none"` to remove the default underline.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+page = py2html.Parent()
+
+page.Link(
+    href="https://github.com",
+    text="View on GitHub",
+    fg="#24292e",
+    text_decor="none",
+)
+print(page.getHTML(insideframe=True))
+# <a style='color: #24292e; background: transparent; border: none; border-radius: 0px; padding: 0px 0px; text-decoration: none;' href="https://github.com">View on GitHub</a>
+```
+
+---
+
+## Frame
+
+```python
+page.Frame(
+    fg="#000", bg="#fff", bd="none", bdradius="50px",
+    content="Py2HTML", padx=15, pady=15,
+    width="auto", height="auto",
+    marginx=0, marginy=0,
+    content_manager="block",
+    flex_config={"align-items": "flex-start", "justify-content": "flex-start",
+                 "flex-direction": "row", "flex-wrap": "nowrap", "gap": "0px"},
+    position="static",
+    offset={"top": "0px", "left": "0px", "right": "auto", "bottom": "auto"},
+)
+```
+
+Appends a `<div>` container element to the document. `content` can be a plain string or another `Parent` instance for nested layouts.
+
+<ParamField body="fg" type="str" default='"#000"'>
+  Text color — maps to the CSS `color` property.
+</ParamField>
+
+<ParamField body="bg" type="str" default='"#fff"'>
+  Background color — maps to the CSS `background` property.
+</ParamField>
+
+<ParamField body="bd" type="str" default='"none"'>
+  Border shorthand — maps to the CSS `border` property.
+</ParamField>
+
+<ParamField body="bdradius" type="str" default='"50px"'>
+  Border radius — maps to the CSS `border-radius` property.
+</ParamField>
+
+<ParamField body="content" type="str | Parent" default='"Py2HTML"'>
+  Inner content of the `<div>`. When a `str`, it is HTML-escaped. When a
+  `Parent` object, its `tags` list is rendered recursively as the div's
+  children.
+</ParamField>
+
+<ParamField body="padx" type="int" default="15">
+  Horizontal padding in pixels.
+</ParamField>
+
+<ParamField body="pady" type="int" default="15">
+  Vertical padding in pixels.
+</ParamField>
+
+<ParamField body="width" type="str" default='"auto"'>
+  CSS width of the div — maps to the `width` property.
+</ParamField>
+
+<ParamField body="height" type="str" default='"auto"'>
+  CSS height of the div — maps to the `height` property.
+</ParamField>
+
+<ParamField body="marginx" type="int | str" default="0">
+  Horizontal margin — used in the CSS shorthand `margin: {marginy} {marginx}`.
+</ParamField>
+
+<ParamField body="marginy" type="int | str" default="0">
+  Vertical margin — used in the CSS shorthand `margin: {marginy} {marginx}`.
+</ParamField>
+
+<ParamField body="content_manager" type="str" default='"block"'>
+  CSS `display` value for the div. Set to `"flex"` to activate flexbox layout,
+  which uses the values from `flex_config`.
+</ParamField>
+
+<ParamField body="flex_config" type="dict" default='{"align-items": "flex-start", "justify-content": "flex-start", "flex-direction": "row", "flex-wrap": "nowrap", "gap": "0px"}'>
+  Flexbox configuration applied when `content_manager="flex"`. Supports the
+  following keys: `align-items`, `justify-content`, `flex-direction`,
+  `flex-wrap`, and `gap`.
+</ParamField>
+
+<ParamField body="position" type="str" default='"static"'>
+  CSS `position` value — e.g., `"relative"`, `"absolute"`, `"fixed"`.
+</ParamField>
+
+<ParamField body="offset" type="dict" default='{"top": "0px", "left": "0px", "right": "auto", "bottom": "auto"}'>
+  CSS offset values applied alongside `position`. Supports `top`, `left`,
+  `right`, and `bottom` keys.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+```python
+import py2html
+
+page = py2html.Parent()
+
+# Nested layout: build inner content as a separate Parent
+inner = py2html.Parent()
+inner.Heading(level=2, text="Hello from inside a Frame")
+inner.Button(text="Learn More")
+
+page.Frame(
+    content=inner,
+    bg="#f0f4f8",
+    bdradius="12px",
+    padx=24,
+    pady=24,
+    content_manager="flex",
+    flex_config={
+        "align-items": "center",
+        "justify-content": "space-between",
+        "flex-direction": "row",
+        "flex-wrap": "wrap",
+        "gap": "16px",
+    },
+)
+```
+
+<Tip>
+  Pass a `Parent` instance as `content` to compose complex, nested layouts.
+  The inner `Parent`'s tags are rendered without the outer
+  `<html><head><body>` wrapper.
+</Tip>
+
+---
+
+## Script
+
+```python
+page.Script(code="", src=None, **kwargs)
+```
+
+Appends a `<script>` element to the document. Use `code` for inline JavaScript or `src` to reference an external file. Additional keyword arguments become HTML attributes on the tag.
+
+<ParamField body="code" type="str" default='""'>
+  Inline JavaScript to embed between `<script>` and `</script>`. This content
+  is **never** HTML-escaped — it is stored and rendered exactly as provided.
+</ParamField>
+
+<ParamField body="src" type="str | None" default="None">
+  URL or path to an external JavaScript file. Rendered as the `src` attribute.
+  The value is HTML-escaped when output.
+</ParamField>
+
+<ParamField body="**kwargs" type="any">
+  Additional HTML attributes, e.g., `defer=True`, `type="module"`. Each
+  key-value pair is serialised as `key="value"` on the opening tag.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+<Warning>
+  If both `code` and `src` are provided, `src` takes precedence and `code` is
+  cleared. A warning is printed to `sys.stderr`.
+</Warning>
+
+```python
+page = py2html.Parent()
+
+# Inline script
+page.Script(code="console.log('py2html loaded');")
+
+# External script with defer
+page.Script(src="/static/app.js", defer=True)
+
+# ES module
+page.Script(src="/static/module.js", type="module")
+```
+
+<Note>
+  Because the `<script>` tag's content bypasses `escapeCharacters()`, you can
+  embed arbitrary JavaScript including template literals, comparison operators
+  (`<`, `>`), and string quotes without worrying about HTML encoding.
+</Note>
+
+---
+
+## TextNode
+
+```python
+page.TextNode(text="", escape=True)
+```
+
+Appends a raw text node — plain text with no wrapping HTML tag — to the document. This is also what `page(...)` (the `__call__` shorthand) uses internally.
+
+<ParamField body="text" type="str" default='""'>
+  The text content to insert. When `escape=True`, passed through
+  `escapeCharacters()`. When `escape=False`, inserted verbatim.
+</ParamField>
+
+<ParamField body="escape" type="bool" default="True">
+  Controls HTML escaping. Set to `False` to inject raw HTML fragments directly
+  into the document.
+</ParamField>
+
+**Returns:** `int` — the index of the new text node in `self.tags`.
+
+```python
+page = py2html.Parent()
+
+# Escaped text node
+page.TextNode("5 > 3 and 2 < 4")
+# Renders as: 5 &gt; 3 and 2 &lt; 4
+
+# Raw HTML injection
+page.TextNode("<hr />", escape=False)
+# Renders as: <hr />
+```
+
+<Warning>
+  Using `escape=False` trusts the caller completely. Never pass untrusted
+  user input with `escape=False` as it creates an XSS risk.
+</Warning>
+
+---
+
+## CustomTag
+
+```python
+page.CustomTag(tag_name="div", content="", fg=None, bg=None, bd=None, bdradius=None, padx=None, pady=None, **kwargs)
+```
+
+Appends an arbitrary HTML element to the document. Use this for any tag not covered by the built-in methods. Extra keyword arguments become HTML attributes on the rendered tag.
+
+<ParamField body="tag_name" type="str" default='"div"'>
+  The HTML tag name to render, e.g., `"section"`, `"article"`, `"nav"`,
+  `"span"`.
+</ParamField>
+
+<ParamField body="content" type="str | Parent" default='""'>
+  Inner content. When a `str`, it is HTML-escaped. When a `Parent` object,
+  its tags are rendered recursively as children (without the outer wrapper).
+</ParamField>
+
+<ParamField body="fg" type="str | None" default="None">
+  Text color — maps to the CSS `color` property. Omitted from the style
+  attribute when `None`.
+</ParamField>
+
+<ParamField body="bg" type="str | None" default="None">
+  Background color — maps to the CSS `background` property. Omitted when
+  `None`.
+</ParamField>
+
+<ParamField body="bd" type="str | None" default="None">
+  Border shorthand — maps to the CSS `border` property. Omitted when `None`.
+</ParamField>
+
+<ParamField body="bdradius" type="str | None" default="None">
+  Border radius — maps to the CSS `border-radius` property. Omitted when
+  `None`.
+</ParamField>
+
+<ParamField body="padx" type="int | None" default="None">
+  Horizontal padding in pixels. Padding is only applied when **both** `padx`
+  and `pady` are provided.
+</ParamField>
+
+<ParamField body="pady" type="int | None" default="None">
+  Vertical padding in pixels. Padding is only applied when **both** `padx` and
+  `pady` are provided.
+</ParamField>
+
+<ParamField body="**kwargs" type="any">
+  Additional HTML attributes rendered on the tag, e.g., `id="main"`,
+  `class_="container"`. Attribute values are HTML-escaped.
+</ParamField>
+
+**Returns:** `int` — the index of the new element in `self.tags`.
+
+<Warning>
+  If only one of `padx` or `pady` is supplied, a warning is printed to
+  `sys.stderr` and padding is not applied to the element.
+</Warning>
+
+```python
+page = py2html.Parent()
+
+# A <section> with an id attribute
+page.CustomTag(
+    tag_name="section",
+    content="Main content area",
+    fg="#222",
+    bg="#fafafa",
+    padx=32,
+    pady=32,
+    id="main-section",
+)
+
+# A <nav> wrapping another Parent
+nav_items = py2html.Parent()
+nav_items.Link(href="/home", text="Home")
+nav_items.Link(href="/about", text="About")
+
+page.CustomTag(
+    tag_name="nav",
+    content=nav_items,
+    bg="#222",
+    padx=16,
+    pady=12,
+)
+
+print(page.getHTML(insideframe=True))
+```

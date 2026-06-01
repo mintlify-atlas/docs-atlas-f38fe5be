@@ -1,0 +1,165 @@
+---
+title: "Rendering and Saving HTML Output"
+sidebarTitle: "Saving Output"
+description: "Learn how to render your py2html page to an HTML string, write it to a file, or pipe it to any file-like object using getHTML(), saveToFile(), and save()."
+---
+
+Once you have built a page by adding elements to a `Parent` object, you need to turn it into actual HTML text. py2html gives you three distinct ways to do this — a method that returns a string, a method that writes directly to a named file, and a method that accepts any file-like object — plus a `__str__` implementation so that `print()` works out of the box.
+
+## getHTML()
+
+`getHTML()` is the core render method. Every other output method calls it internally. It iterates over the `Parent`'s `tags` list, builds inline CSS from the stored style parameters, and concatenates the resulting HTML into a single string that it returns.
+
+```python
+getHTML(format=False, insideframe=False)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `format` | `bool` | `False` | When `True`, passes the output through BeautifulSoup's `prettify()` to add indentation and newlines. |
+| `insideframe` | `bool` | `False` | When `True`, omits the surrounding `<html><head><body>` wrapper. Used internally when rendering nested `Frame()` content. |
+
+**Returns:** a `str` containing the full HTML document (or fragment, when `insideframe=True`).
+
+### Compact vs. formatted output
+
+With `format=False` (the default), all tags are written on a single line with no extra whitespace. This produces the smallest possible output and is the right choice for files you will serve directly from a web server.
+
+With `format=True`, the output is first assembled with newlines between tags and then run through BeautifulSoup's `prettify()`. The result is indented, human-readable HTML — useful for debugging or inspecting the structure of a generated page.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Hello, World!")
+page.Label(text="This is a paragraph.")
+
+# Compact — suitable for production
+compact_html = page.getHTML()
+
+# Formatted — human-readable
+pretty_html  = page.getHTML(format=True)
+
+print("--- compact ---")
+print(compact_html)
+
+print("--- formatted ---")
+print(pretty_html)
+```
+
+<Note>
+  BeautifulSoup is a required dependency of py2html and is used only when
+  `format=True`. If prettifying fails for any reason, `getHTML()` silently
+  falls back to the unformatted output rather than raising an exception.
+</Note>
+
+### insideframe parameter
+
+You will rarely need to call `getHTML(insideframe=True)` yourself. py2html uses it internally whenever a `Frame()` whose `content` is a `Parent` object is being rendered — it recursively renders the child `Parent` without wrapping it in a second `<html>` shell.
+
+## saveToFile()
+
+`saveToFile()` is the simplest way to write a page to disk. It opens the file you name for writing and calls `getHTML()` — without formatting — to populate it.
+
+```python
+saveToFile(filename)
+```
+
+| Parameter | Description |
+|---|---|
+| `filename` | A string path (relative or absolute) for the output file. |
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="My Site")
+page.Label(text="Built with py2html.")
+page.Button(text="Learn More", fg="#fff", bg="#00a651")
+
+page.saveToFile("index.html")
+print("Saved to index.html")
+```
+
+<Tip>
+  `saveToFile()` uses the compact (non-formatted) renderer. If you want a
+  pretty-printed file on disk, use `save()` with an open file handle — it calls
+  `getHTML(format=True)` internally.
+</Tip>
+
+## save()
+
+`save()` writes `getHTML(format=True)` — the prettified output — to any object that exposes a `.write()` method. This makes it compatible with open file handles, `sys.stdout`, `io.StringIO` buffers, and any other file-like destination.
+
+```python
+save(destination)
+```
+
+| Parameter | Description |
+|---|---|
+| `destination` | Any writable file-like object with a `.write(str)` method. |
+
+<CodeGroup>
+```python Write formatted HTML to a file
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Formatted Output")
+page.Label(text="This file is human-readable.")
+
+with open("formatted.html", "w") as f:
+    page.save(f)
+```
+
+```python Print to stdout
+import py2html
+import sys
+
+page = py2html.Parent()
+page.Heading(level=1, text="Terminal Output")
+page.Label(text="HTML streamed to the console.")
+
+page.save(sys.stdout)
+```
+
+```python Capture in a StringIO buffer
+import py2html
+import io
+
+page = py2html.Parent()
+page.Heading(level=1, text="In-Memory Buffer")
+page.Label(text="Captured for further processing.")
+
+buffer = io.StringIO()
+page.save(buffer)
+
+html_string = buffer.getvalue()
+print(f"Captured {len(html_string)} characters")
+```
+</CodeGroup>
+
+## print() and \_\_str\_\_
+
+`Parent` implements `__str__`, which returns `getHTML(format=True)`. This means you can pass a `Parent` object directly to `print()` and get well-formatted HTML written to the terminal.
+
+```python
+import py2html
+
+page = py2html.Parent()
+page.Heading(level=1, text="Quick Debug")
+page.Label(text="Checking the output.")
+
+# Equivalent to: print(page.getHTML(format=True))
+print(page)
+```
+
+## Choosing the right method
+
+| Goal | Method | Formatting |
+|---|---|---|
+| Save a production file to disk | `saveToFile("out.html")` | None (compact) |
+| Save a readable file to disk | `save(open("out.html", "w"))` | BeautifulSoup `prettify()` |
+| Get an HTML string for further use | `getHTML()` | None (compact) |
+| Get a readable HTML string | `getHTML(format=True)` | BeautifulSoup `prettify()` |
+| Print to terminal for debugging | `print(page)` or `page.save(sys.stdout)` | BeautifulSoup `prettify()` |
+| Write to an in-memory buffer | `page.save(io.StringIO())` | BeautifulSoup `prettify()` |
