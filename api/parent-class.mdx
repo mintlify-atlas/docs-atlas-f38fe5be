@@ -226,18 +226,18 @@ The method performs the following transformations in order:
 | `\n` | `<br>` |
 | `\t` | `&nbsp;&nbsp;&nbsp;&nbsp;` |
 | `[c … c]` | `<center> … </center>` |
-| `[* … *]` | `<strong> … </strong>` |
-| `[_ … _]` | `<em> … </em>` |
-| `` [` … `] `` | `<code> … </code>` |
-| `` [``` … ```] `` | `<pre><code> … </code></pre>` |
 | `[xs … xs]` | `<span style='font-size: 0.6rem;'> … </span>` |
 | `[xxs … xxs]` | `<span style='font-size: 0.4rem;'> … </span>` |
-| `[s … s]` | `<span style='font-size: 0.8rem;'> … </span>` |
-| `[m … m]` | `<span style='font-size: 1rem;'> … </span>` |
 | `[l … l]` | `<span style='font-size: 1.2rem;'> … </span>` |
 | `[xl … xl]` | `<span style='font-size: 1.5rem;'> … </span>` |
 | `[xxl … xxl]` | `<span style='font-size: 2rem;'> … </span>` |
 | `[xxxl … xxxl]` | `<span style='font-size: 3rem;'> … </span>` |
+| `[s … s]` | `<span style='font-size: 0.8rem;'> … </span>` |
+| `[m … m]` | `<span style='font-size: 1rem;'> … </span>` |
+| `` [` … `] `` | `<code> … </code>` |
+| `` [``` … ```] `` | `<pre><code> … </code></pre>` |
+| `[* … *]` | `<strong> … </strong>` |
+| `[_ … _]` | `<em> … </em>` |
 
 ```python
 page = py2html.Parent()

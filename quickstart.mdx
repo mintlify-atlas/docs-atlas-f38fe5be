@@ -128,10 +128,18 @@ print("Saved to index.html")
     ```
 
     At this point `page` holds an empty element list. The root `<html>`, `<head>`, and `<body>` tags are added automatically when you call `getHTML()`.
+
+    You can also configure the `Parent` with `config()` after construction:
+
+    ```python
+    page.config(title="My Page", style="body { font-family: sans-serif; }")
+    ```
+
+    `config()` accepts `title` (sets the document title string) and `style` (must be a string).
   </Step>
 
   <Step title="Add a Heading">
-    `Heading` renders an `<h1>` through `<h6>` tag. The `level` parameter controls which heading rank is used.
+    `Heading` renders an `<h1>` through `<h6>` tag. The `level` parameter controls which heading rank is used (default `1`).
 
     ```python
     page.Heading(
@@ -143,11 +151,13 @@ print("Saved to index.html")
     )
     ```
 
+    Default values: `level=1`, `text="Py2HTML Heading"`, `fg="#333"`, `bg="transparent"`, `bd="none"`, `bdradius="0px"`, `padx=0`, `pady=0`.
+
     <Tip>
       Text passed to any element method is **automatically HTML-escaped**. You do not need to sanitise user-supplied strings before passing them in.
     </Tip>
 
-    The method appends the heading to `page.tags` and returns the integer index of the new element — useful if you want to reference it later.
+    The method appends the heading to `page.tags` and returns the integer index of the new element — useful if you want to reference it later with `page[index]`.
   </Step>
 
   <Step title="Add a Label and a Button">
@@ -173,7 +183,13 @@ print("Saved to index.html")
     )
     ```
 
+    Default values for `Button`: `fg="#00a651"`, `bg="#deffee"`, `bd="none"`, `bdradius="50px"`, `text="Py2HTML"`, `padx=15`, `pady=15`.
+
+    Default values for `Label`: `fg="#000"`, `bg="#fff"`, `bd="none"`, `bdradius="50px"`, `text="Py2HTML"`, `padx=15`, `pady=15`.
+
     Notice the `[* … *]` syntax inside the `Label` text. py2html's inline markup processor converts this to `<strong>…</strong>` automatically.
+
+    py2html also provides `Text` for multiline text input (`<textarea>`), with the same parameter set as `Label`.
   </Step>
 
   <Step title="Add a Link and an Image">
@@ -199,6 +215,10 @@ print("Saved to index.html")
         bdradius="8px",
     )
     ```
+
+    Default values for `Link`: `href="https://example.com"`, `text="Click Here"`, `fg="#00a651"`, `bg="transparent"`, `bd="none"`, `bdradius="0px"`, `padx=0`, `pady=0`, `text_decor="underline"`.
+
+    Default values for `Image`: `src=""`, `alt=""`, `width=None`, `height=None`, `bd="none"`, `bdradius="0px"`.
   </Step>
 
   <Step title="Group elements in a Frame">
@@ -226,29 +246,57 @@ print("Saved to index.html")
     )
     ```
 
-    Setting `content_manager="flex"` enables flexbox on the container. The `flex_config` dictionary maps directly to CSS flex properties.
+    Setting `content_manager="flex"` enables flexbox on the container. The `flex_config` dictionary maps directly to CSS flex properties. The `content_manager` parameter (default `"block"`) controls the CSS `display` property of the `<div>`.
+
+    Full `Frame` signature: `Frame(fg="#000", bg="#fff", bd="none", bdradius="50px", content="Py2HTML", padx=15, pady=15, width="auto", height="auto", marginx=0, marginy=0, content_manager="block", flex_config={...}, position="static", offset={...})`.
   </Step>
 
   <Step title="Render to HTML and save to file">
-    Call `getHTML(format=True)` to produce a complete, prettified HTML string. Use `saveToFile()` to write it to disk in one call.
+    Call `getHTML(format=True)` to produce a complete, prettified HTML string. Use `saveToFile()` to write it to disk in one call, or `save()` to write prettified HTML to an already-open file object.
 
     ```python
     # Print the formatted HTML to stdout
     html_output = page.getHTML(format=True)
     print(html_output)
 
-    # Write to a file
+    # Write unformatted HTML to a named file
     page.saveToFile("index.html")
+
+    # Write prettified HTML to an open file object
+    with open("index_pretty.html", "w") as f:
+        page.save(f)
     ```
 
-    `saveToFile` opens the file in write mode and calls `getHTML()` internally (without `format=True`). If you want the prettified version saved, write it yourself:
+    `saveToFile(filename)` opens the file in write mode and calls `getHTML()` internally (without `format=True`), so the saved HTML is compact. `save(destination)` calls `getHTML(format=True)` and writes the prettified result to the file object you provide.
 
-    ```python
-    with open("index.html", "w") as f:
-        f.write(page.getHTML(format=True))
-    ```
+    `str(page)` (or `page.__str__()`) is equivalent to `page.getHTML(format=True)` and returns a prettified HTML string directly.
   </Step>
 </Steps>
+
+## Tag indexing and deletion
+
+Every element method returns the integer index of the newly added tag in `page.tags`. You can use `page[index]` to retrieve the raw tag dictionary, or `del page[index]` to remove it.
+
+```python
+page = py2html.Parent()
+idx = page.Heading(text="My Heading")   # returns 0
+page.Label(text="My Label")             # returns 1
+
+print(page[0])      # {'type': 'h1', 'fg': '#333', ...}
+del page[1]         # removes the Label
+```
+
+## Calling the Parent directly
+
+Calling a `Parent` instance like a function adds a `TextNode` from one or more string arguments:
+
+```python
+page = py2html.Parent()
+page("Hello,", "world!")           # adds a text node "Hello, world!" (escaped)
+page("Raw <br>", escape=False)     # adds unescaped HTML text
+```
+
+The `sep` keyword argument (default `" "`) controls the separator used when joining multiple positional arguments.
 
 ## Expected HTML output (abbreviated)
 

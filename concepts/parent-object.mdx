@@ -1,7 +1,7 @@
 ---
-title: "The Parent Object: py2html's Core Document Model"
+title: "The Parent Object: py2html's Core HTML Document Model"
 sidebarTitle: "Parent Object"
-description: "The Parent class is py2html's central object. Every HTML page is a Parent instance that holds an ordered list of element dictionaries rendered to HTML on demand."
+description: "The Parent class is py2html's core object — every page is a Parent that holds an ordered list of element dictionaries and renders HTML on demand."
 ---
 
 The `Parent` class is the single building block every py2html project starts with. It acts as both a document root and a reusable container: it keeps an internal, ordered list of element dictionaries (`self.tags`), exposes methods that append to that list, and renders the whole structure to an HTML string whenever you call `getHTML()`. Once you understand how `Parent` manages its tag list, every other part of the library falls into place.
@@ -73,18 +73,23 @@ Both raise `IndexError` for out-of-range indices.
 
 ## `__call__`: Adding a TextNode Inline
 
-Calling a `Parent` instance directly is shorthand for `TextNode()`. All positional arguments are joined with the `sep` keyword (default `" "`) and appended as a text node. The `escape` keyword (default `True`) controls HTML-escaping.
+Calling a `Parent` instance directly is shorthand for `TextNode()`. All positional arguments are joined with the `sep` keyword (default `" "`) and appended as a text node. The `escape` keyword (default `True`) controls HTML-escaping. `__call__` returns `self.tags[-1]` — the tag dictionary that was just appended (not an integer index).
 
 ```python
 page = Parent()
 page("Hello, world!")          # adds a TextNode with text "Hello, world!"
 page("Line 1", "Line 2")       # joined as "Line 1 Line 2"
 page("<b>raw</b>", escape=False)  # no escaping — raw HTML injected
+
+# __call__ returns the tag dict of the appended TextNode
+node = page("Status update")
+print(node["type"])    # textnode
+print(node["content"]) # Status update
 ```
 
 ## `__str__`: Human-Readable HTML
 
-`str(page)` calls `getHTML(format=True)`, which runs the output through BeautifulSoup's `prettify()` for indented, readable HTML. This is the same output that `save()` writes to a file.
+`str(page)` calls `getHTML(format=True, insideframe=False)`, which runs the output through BeautifulSoup's `prettify()` for indented, readable HTML. This is the same output that `save()` writes to a file.
 
 ```python
 page = Parent()

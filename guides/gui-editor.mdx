@@ -1,10 +1,10 @@
 ---
 title: "Using the py2htmlGUI Visual Editor"
 sidebarTitle: "GUI Editor"
-description: "py2html includes an optional Tkinter-based visual editor that lets you build pages with a drag-and-drop element tree, live HTML preview, and JSON project save/load."
+description: "py2html includes an optional Tkinter-based visual editor with an element hierarchy tree, live HTML preview, and JSON project save and load support."
 ---
 
-py2html ships with an optional visual editor — `py2htmlGUI.py` — that lets you construct pages without writing Python code. The editor displays your page as a live element hierarchy, opens property dialogs for each element type, and renders a real-time HTML preview. Projects can be saved to a JSON file and reopened in a later session, or exported directly to an `.html` file.
+py2html ships with an optional visual editor — `py2htmlGUI.py` — that lets you construct pages without writing Python code. The editor displays your page as a live element hierarchy in a Tkinter Treeview, opens property dialogs for each element type, and renders a real-time HTML preview. Projects can be saved to a JSON file and reopened in a later session, or exported directly to an `.html` file.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ The GUI editor depends on several packages beyond py2html's core `beautifulsoup4
 | `tkinter` | Standard-library GUI framework (ships with most Python distributions) |
 | `tkinterweb` | Embeds an HTML rendering engine inside a Tkinter window for the inline preview panel |
 | `webview` | Opens a full-featured browser window for the `Show Preview` command |
-| `sv_ttk` | Applies the Sun Valley (Windows 11-style) theme to all Tkinter widgets |
+| `sv_ttk` | Applies the Sun Valley (Windows 11-style) light theme to all Tkinter widgets |
 
 <Note>
   `tkinter` is included with the official Python installers for Windows and
@@ -27,7 +27,7 @@ The GUI editor depends on several packages beyond py2html's core `beautifulsoup4
 
 ## Installation
 
-The GUI editor is installed optionally alongside the main library. When you run `py2html_installer.py`, the installer window presents a **"Install Py2Html GUI"** checkbox. Checking it before clicking **Install** copies `py2htmlGUI.py` into the same directory as `py2html/__init__.py`.
+The GUI editor is installed optionally alongside the main library. When you run `py2html_installer.py`, the installer window presents a **"Install Py2Html GUI"** checkbox. Checking it before clicking **Install** writes `py2htmlGUI.py` into `~/py2html/` (the same directory as `__init__.py`).
 
 <Steps>
   <Step title="Run the installer">
@@ -41,7 +41,7 @@ The GUI editor is installed optionally alongside the main library. When you run 
     In the installer window, check **"Install Py2Html GUI"** before proceeding.
   </Step>
   <Step title="Click Install">
-    Click the **Install** button. The installer downloads `beautifulsoup4` via pip and writes both `py2html/__init__.py` and `py2html/py2htmlGUI.py` to your home directory.
+    Click the **Install** button. The installer downloads `beautifulsoup4` via pip and writes both `__init__.py` and `py2htmlGUI.py` into the `~/py2html/` directory.
   </Step>
   <Step title="Launch the editor">
     Once installation completes, start the editor:
@@ -70,6 +70,8 @@ The editor opens an 800 × 700 window divided into several regions.
 │                  │   ▶ Script: inline (42 c) │
 │                  │                           │
 ├──────────────────┴──────────────────────────┤
+│ [Delete Selected]                            │
+├──────────────────────────────────────────────┤
 │ Inserting into: 'Frame (Div): flex'  (status)│
 └─────────────────────────────────────────────┘
 ```
@@ -77,6 +79,8 @@ The editor opens an 800 × 700 window divided into several regions.
 **Left panel — Toolbar buttons:** Three quick-access buttons sit above the treeview: `Insert Frame (Div)`, `Custom Tag`, and `Custom Scripts`. They open the same property dialogs as their counterparts in the Insert menu.
 
 **Centre panel — Element Hierarchy (Treeview):** Every element you add appears here as a labelled node. Frame (Div) nodes are expandable; their children appear indented beneath them. Clicking any node in the tree updates the insertion target.
+
+**Delete Selected button:** A button at the bottom of the window. Clicking it removes the currently selected element from both the Treeview and the underlying data model.
 
 **Bottom — Status bar:** Displays the currently active insertion target. New elements are always added as children of the target shown here.
 
@@ -125,6 +129,7 @@ The **Frame (Div)** dialog is the most detailed. It contains two tabs:
 | **Open Project (JSON)** | Opens a file picker, loads a previously saved `.json` project, and rebuilds the element tree from the serialised data. |
 | **Save Project (JSON)** | Opens a save dialog and writes the current element tree to a `.json` file. The JSON preserves the full element hierarchy and all style properties. |
 | **Export HTML** | Opens a save dialog and writes the rendered, prettified HTML to an `.html` file using `getHTML(format=True)`. |
+| **Exit** | Closes the editor window. |
 
 ## HTML menu and preview
 
@@ -134,6 +139,10 @@ The **HTML** menu provides two preview commands.
 |---|---|---|
 | **Show Preview** | `Ctrl+Enter` | Renders the current page and opens it in a native `webview` browser window. |
 | **Get HTML** | `Ctrl+P` | Opens a split window showing the raw HTML source on the left and a live `tkinterweb` inline preview on the right. The preview refreshes automatically every two seconds. |
+
+## Theming and fonts
+
+The editor applies the Sun Valley light theme via `sv_ttk.set_theme("light")` at startup, giving all Tkinter widgets a Windows 11-style appearance. Font sizes are configured through `font.nametofont()` on the Sun Valley named fonts (e.g., `SunValleyBodyFont`, `SunValleyTitleFont`). No manual theme configuration is required.
 
 ## JSON project format
 

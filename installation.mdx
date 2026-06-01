@@ -42,15 +42,13 @@ py2html is distributed as a self-contained installer script rather than a PyPI p
   </Step>
 
   <Step title="(Optional) Enable the GUI editor">
-    Before clicking **Install**, check the **Install Py2Html GUI** checkbox if you want the visual editor. The GUI editor requires three additional packages:
+    Before clicking **Install**, check the **Install Py2Html GUI** checkbox if you want the visual editor. The GUI editor requires three additional packages that you must install yourself:
 
     | Package | Purpose |
     |---|---|
     | `tkinterweb` | Embedded HTML preview pane inside the editor |
     | `webview` | Full-browser live preview window |
     | `sv_ttk` | Sun Valley theme for the editor's Tkinter widgets |
-
-    Install these yourself if the installer does not fetch them automatically:
 
     ```bash
     pip install tkinterweb webview sv_ttk
@@ -61,7 +59,7 @@ py2html is distributed as a self-contained installer script rather than a PyPI p
     Click the **Install** button. The installer will:
 
     1. Run `pip install beautifulsoup4` in a background thread.
-    2. Create the directory `~/py2html/` (i.e., `py2html/` inside your home folder).
+    2. Create the directory `~/py2html/` (i.e., `py2html/` inside your home folder, resolved via `Path.home() / 'py2html'`).
     3. Write `~/py2html/__init__.py` — this is the py2html library itself.
     4. If the GUI checkbox was checked, also write `~/py2html/py2htmlGUI.py`.
 

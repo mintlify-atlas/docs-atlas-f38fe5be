@@ -27,7 +27,7 @@ No Jinja2 filters, no f-string soup, no `BeautifulSoup` soup-ing of your own out
 
 <CardGroup cols={2}>
   <Card title="Rich element library" icon="puzzle-piece">
-    Add `Button`, `Label`, `Heading`, `Image`, `Link`, `Frame`, `Script`, `TextNode`, and `CustomTag` elements using straightforward method calls. Every element exposes foreground colour, background colour, border, border radius, and padding parameters.
+    Add `Button`, `Label`, `Text`, `Heading`, `Image`, `Link`, `Frame`, `Script`, `TextNode`, and `CustomTag` elements using straightforward method calls. Every element exposes foreground colour, background colour, border, border radius, and padding parameters.
   </Card>
   <Card title="Inline text markup" icon="text-size">
     Apply font-size spans, bold, italic, inline code, code blocks, and centred text directly inside any text string using a lightweight bracket syntax — for example `[* bold *]` or `[xl large xl]`.
@@ -61,12 +61,39 @@ Inside any text value you can use the following bracket pairs:
 | `[* bold *]` | **Bold** (`<strong>`) |
 | `[_ italic _]` | *Italic* (`<em>`) |
 | `` [` code `] `` | Inline code (`<code>`) |
-| `[``` block ```]` | Code block (`<pre><code>`) |
+| `` [``` block ```] `` | Code block (`<pre><code>`) |
 | `[c centred c]` | Centred text (`<center>`) |
 | `[xl large xl]` | 1.5 rem span |
 | `[s small s]` | 0.8 rem span |
 
-Size variants available: `xxs`, `xs`, `s`, `m`, `l`, `xl`, `xxl`, `xxxl`.
+Size variants available: `xxs` (0.4 rem), `xs` (0.6 rem), `s` (0.8 rem), `m` (1 rem), `l` (1.2 rem), `xl` (1.5 rem), `xxl` (2 rem), `xxxl` (3 rem).
+
+## Parent object API overview
+
+All functionality lives on the `Parent` class. The table below lists every public method and special method.
+
+| Method / attribute | Description |
+|---|---|
+| `Parent()` | Create a new document root (or nested container). Initialises an empty `tags` list and `html` string. |
+| `config(**kwargs)` | Configure the `Parent` with keyword arguments. Accepts `title` (sets `self.title`) and `style` (sets `self.style`, must be a string). |
+| `getHTML(format=False)` | Render the full HTML document. When `format=True`, the output is prettified with `BeautifulSoup.prettify()`. |
+| `saveToFile(filename)` | Open `filename` in write mode and write the unformatted HTML from `getHTML()`. |
+| `save(destination)` | Write prettified HTML (`getHTML(format=True)`) to an already-open file object `destination`. |
+| `escapeCharacters(text)` | Escape `&`, `<`, `>`, `"`, and `'`, then apply inline markup substitutions (bold, italic, size spans, etc.). Called automatically on all text content. |
+| `Button(...)` | Add a `<button>` element. |
+| `Label(...)` | Add a `<p>` element. |
+| `Text(...)` | Add a `<textarea>` element. |
+| `Heading(level=1, ...)` | Add an `<h1>`–`<h6>` element. |
+| `Image(src="", ...)` | Add a self-closing `<img />` element. |
+| `Link(href=..., ...)` | Add an `<a>` element. |
+| `Frame(content=..., ...)` | Add a `<div>` container. Pass a `Parent` instance as `content` to nest child elements. |
+| `Script(code="", src=None, ...)` | Add a `<script>` tag with inline code or an external `src`. |
+| `TextNode(text="", escape=True)` | Add a raw text node. Set `escape=False` to inject unescaped HTML. |
+| `CustomTag(tag_name="div", ...)` | Add any HTML tag by name. |
+| `__call__(*args, escape=True, sep=" ")` | Call the `Parent` like a function to add a text node from positional string arguments. |
+| `__getitem__(index)` | Retrieve a tag dictionary by its integer index in `self.tags`. |
+| `__delitem__(index)` | Delete a tag from `self.tags` by index. |
+| `__str__()` | Return the prettified HTML document (equivalent to `getHTML(format=True)`). |
 
 ## Optional GUI editor
 

@@ -1,7 +1,7 @@
 ---
-title: "Styling Elements with py2html's Style Parameters"
+title: "Styling py2html Elements with Inline Style Parameters"
 sidebarTitle: "Styling"
-description: "Every py2html element accepts inline style parameters — fg, bg, bd, bdradius, padx, pady, width, height, margin — which are rendered as CSS inline styles."
+description: "py2html elements accept inline style parameters — fg, bg, bd, bdradius, padx, pady, width, height, and margin — rendered directly as CSS inline styles."
 ---
 
 py2html skips external stylesheets and CSS classes by default: every element carries its visual properties as a `style="…"` attribute built at render time. You set colours, borders, spacing, and layout through plain Python keyword arguments — no CSS string concatenation required. The rendering pipeline in `getHTML()` inspects each tag's dictionary, assembles all non-empty style values into a single CSS string, and writes it directly onto the element's opening tag.
@@ -16,8 +16,8 @@ The following parameters are available on `Button`, `Label`, `Text`, `Heading`, 
 | `bg`       | `background`        | `#deffee` / `#fff`       | Accepts colours, gradients, and `transparent` |
 | `bd`       | `border`            | `"none"`                 | Full CSS border shorthand, e.g. `"1px solid #ccc"` |
 | `bdradius` | `border-radius`     | `"50px"`                 | Alias: `bdr` inside the tag dict           |
-| `padx`     | `padding` (x-axis)  | `15`                     | Integer pixels; combined with `pady` as `padding: pady px padx px` |
-| `pady`     | `padding` (y-axis)  | `15`                     | See `padx` note above                      |
+| `padx`     | `padding` (x-axis)  | `15`                     | Integer pixels; combined with `pady` as `padding: {pady}px {padx}px` |
+| `pady`     | `padding` (y-axis)  | `15`                     | See `padx` note above                       |
 
 <Note>
 py2html stores `padx` and `pady` as a tuple `(padx, pady)` in the tag dict. The CSS output is `padding: {pady}px {padx}px;` — vertical first, then horizontal, matching the CSS shorthand convention.
